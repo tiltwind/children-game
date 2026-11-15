@@ -1,0 +1,285 @@
+/* ============================================================
+ * challenges.css —— 各题型的题面样式（配合 gate.css 使用）
+ * ============================================================ */
+
+/* ---------------- 24 点 ---------------- */
+
+.ch24-board {
+    margin: 0 -4px;
+    padding: 4px;
+}
+
+.ch24-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.ch24-tools button {
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid rgba(216, 176, 115, 0.24);
+    border-radius: 8px;
+    background: transparent;
+    color: #c2ad96;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+.ch24-tools button:hover:not(:disabled) {
+    color: #e9d0a6;
+    border-color: rgba(216, 176, 115, 0.65);
+}
+
+.ch24-tools button:disabled {
+    opacity: 0.42;
+    cursor: default;
+}
+
+.ch24-type {
+    margin-top: 14px;
+}
+
+.ch24-type label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: #9c8875;
+}
+
+.ch24-type-row {
+    display: flex;
+    gap: 8px;
+}
+
+.ch24-type-row input {
+    flex: 1;
+    min-width: 0;
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid rgba(216, 176, 115, 0.28);
+    border-radius: 10px;
+    background: rgba(12, 8, 5, 0.55);
+    color: #f3e7d3;
+    font-size: 16px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+}
+
+.ch24-type-row input:focus {
+    border-color: rgba(216, 176, 115, 0.75);
+    outline: none;
+}
+
+.ch24-type-row input::placeholder {
+    color: rgba(182, 160, 140, 0.55);
+}
+
+.ch24-type-row button {
+    height: 48px;
+    padding: 0 20px;
+    border: 1px solid rgba(216, 176, 115, 0.45);
+    border-radius: 10px;
+    background: linear-gradient(170deg, #3d2b1e, #2a1c13);
+    color: #e9d0a6;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+}
+
+.ch24-type-row button:hover:not(:disabled) {
+    border-color: rgba(216, 176, 115, 0.85);
+}
+
+.ch24-type-row button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.ch24-msg {
+    min-height: 18px;
+    margin: 8px 0 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #d98a70;
+}
+
+.ch24-msg[data-tone="hint"] {
+    color: #c9a56b;
+}
+
+.ch24-msg[data-tone="idle"] {
+    color: #9c8875;
+}
+
+/* ---------------- 唐诗接下句 ---------------- */
+
+.chpoem-label {
+    margin: 0 0 4px;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    color: #c9a56b;
+}
+
+.chpoem-q {
+    margin: 10px 0 6px;
+    font-family: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+    font-size: 34px;
+    line-height: 1.45;
+    letter-spacing: 0.05em;
+    color: #f6ecdd;
+}
+
+.chpoem-ask {
+    margin: 0 0 16px;
+    font-size: 15px;
+    color: #b6a08c;
+}
+
+.chpoem-opts {
+    display: grid;
+    gap: 8px;
+}
+
+.chpoem-opt {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid rgba(216, 176, 115, 0.22);
+    border-radius: 10px;
+    background: rgba(12, 8, 5, 0.42);
+    color: #e8dccb;
+    font-size: 17.5px;
+    line-height: 1.55;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+.chpoem-opt:hover:not(:disabled) {
+    border-color: rgba(216, 176, 115, 0.68);
+    background: rgba(216, 176, 115, 0.08);
+}
+
+.chpoem-opt:focus-visible {
+    outline: 2px solid rgba(216, 176, 115, 0.7);
+    outline-offset: 2px;
+}
+
+.chpoem-key {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border: 1px solid rgba(216, 176, 115, 0.28);
+    border-radius: 50%;
+    font-size: 13px;
+    color: #9c8875;
+}
+
+.chpoem-opt.is-right {
+    border-color: rgba(157, 192, 139, 0.7);
+    background: rgba(157, 192, 139, 0.12);
+    color: #cfe0c2;
+}
+
+.chpoem-opt.is-right .chpoem-key {
+    border-color: rgba(157, 192, 139, 0.6);
+    color: #a9cd95;
+}
+
+.chpoem-opt.is-wrong {
+    border-color: rgba(180, 96, 76, 0.5);
+    color: #c08573;
+    opacity: 0.72;
+}
+
+.chpoem-opt:disabled {
+    cursor: default;
+}
+
+.chpoem-msg {
+    min-height: 18px;
+    margin: 10px 0 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #d98a70;
+}
+
+@media (max-width: 560px) {
+    .chpoem-q {
+        font-size: 27px;
+    }
+
+    .chpoem-opt {
+        padding: 12px 13px;
+        font-size: 16px;
+    }
+}
+
+/* 答错后公布正确答案，8 秒倒计时 */
+.chpoem-result {
+    display: grid;
+    gap: 5px;
+    margin-top: 12px;
+    padding: 13px 15px 12px;
+    border: 1px solid rgba(157, 192, 139, 0.32);
+    border-radius: 13px;
+    background: linear-gradient(150deg, rgba(157, 192, 139, 0.1), rgba(157, 192, 139, 0.03));
+    animation: chpoem-pop 0.26s ease both;
+}
+
+.chpoem-result[hidden] {
+    display: none;
+}
+
+.chpoem-result-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: #a9cd95;
+}
+
+.chpoem-result-text {
+    font-family: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+    font-size: 23px;
+    line-height: 1.5;
+    color: #f1dfbd;
+    font-weight: 700;
+}
+
+.chpoem-result-meta {
+    font-size: 13px;
+    color: #b6a08c;
+}
+
+.chpoem-count {
+    margin-top: 1px;
+    font-size: 13px;
+    color: #d8b073;
+}
+
+@keyframes chpoem-pop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 560px) {
+    .chpoem-result-text {
+        font-size: 20px;
+    }
+
+    .chpoem-result {
+        padding: 11px 13px;
+    }
+}

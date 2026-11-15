@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>枪战游戏 · 铁幕街区</title>
+    <link rel="stylesheet" href="gun-style.css">
+    <!-- 站内通用模块：24 点局间门禁、强制休息、局数上限 -->
+    <link rel="stylesheet" href="../twenty-four/css/board.css">
+    <link rel="stylesheet" href="../gate/gate.css">
+    <link rel="stylesheet" href="../gate/challenges.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+<div class="gg-page">
+    <header class="gg-head">
+        <a class="back-link" href="../index.html">← 返回首页</a>
+        <div class="gg-title">
+            <span class="gg-mark">铁幕街区</span>
+            <span class="gg-sub">SHUTU TACTICAL · 8 OPERATIONS</span>
+        </div>
+        <button type="button" class="gg-mute" id="muteBtn" aria-label="切换音效">音效 · 开</button>
+    </header>
+
+    <div class="gg-stage" id="stage">
+        <canvas id="gameCanvas" width="960" height="600" aria-label="战术射击游戏画面"></canvas>
+
+        <!-- 战斗 HUD -->
+        <div class="hud is-hidden" id="hud" aria-live="polite">
+            <div class="hud-left-top">
+                <div class="obj-card">
+                    <div class="obj-line">
+                        <span class="obj-code" id="hudCode">OP.01</span>
+                        <span class="obj-name" id="hudName">仓库清点</span>
+                        <span class="obj-clock" id="hudTimer">00:00</span>
+                    </div>
+                    <p class="obj-text" id="hudObjective">清除全部守卫</p>
+                    <div class="obj-bar"><i id="objBar"></i></div>
+                </div>
+                <div class="stealth-tag" id="hudStealth">潜行中</div>
+            </div>
+
+            <div class="hud-right-top">
+                <div class="mini-wrap">
+                    <canvas id="minimap" width="168" height="101"></canvas>
+                    <span class="mini-label">战术地图</span>
+                </div>
+            </div>
+
+            <div class="boss-hud is-hidden" id="bossHud">
+                <span class="boss-name">铁颚 <i>ARMORED COMMANDER</i></span>
+                <div class="boss-bar"><b id="bossBar"></b></div>
+            </div>
+
+            <div class="hud-left-bottom">
+                <div class="vital">
+                    <span class="vital-label">HP</span>
+                    <div class="vital-bar"><i id="hpBar"></i></div>
+                    <span class="vital-num" id="hpNum">120</span>
+                </div>
+                <div class="vital armor">
+                    <span class="vital-label">ARM</span>
+                    <div class="vital-bar"><i id="armorBar"></i></div>
+                    <span class="vital-num" id="armorNum">20</span>
+                </div>
+                <div class="vital stamina">
+                    <span class="vital-label">STA</span>
+                    <div class="vital-bar"><i id="staminaBar"></i></div>
+                </div>
+                <div class="gear-line">
+                    <span>手雷 <b id="nadeNum">2</b></span>
+                    <span>医疗 <b id="medNum">1</b></span>
+                </div>
+            </div>
+
+            <div class="hud-right-bottom">
+                <div class="weapon-panel">
+                    <div class="weapon-top">
+                        <span class="weapon-name" id="weaponName">MK23 消音手枪</span>
+                        <span class="weapon-ammo"><b id="magNum">15</b><em>/</em><i id="reserveNum">150</i></span>
+                    </div>
+                    <div class="weapon-slots" id="weaponSlots"></div>
+                </div>
+            </div>
+
+            <div class="hud-toasts" id="toasts"></div>
+            <div class="hud-hint" id="hudHint"></div>
+            <div class="hud-banner" id="banner"></div>
+        </div>
+
+        <!-- 菜单 / 简报 / 整备 / 暂停 / 结算 -->
+        <div class="screens" id="screenLayer"></div>
+    </div>
+
+    <footer class="gg-foot">
+        <span>WASD 移动 · Shift 冲刺 · 鼠标瞄准 · 左键射击 · R 换弹 · 1-3 切枪 · G 手雷 · V 医疗 · E 接入 · F 处决 · 空格 翻滚</span>
+        <span class="gg-foot-note">建议桌面键鼠游玩</span>
+    </footer>
+</div>
+
+<script src="../twenty-four/js/core.js"></script>
+<script src="../twenty-four/js/board.js"></script>
+<script src="../gate/gate.js"></script>
+<script src="../gate/challenges/twenty-four.js"></script>
+<script src="../poem/poem-data.js"></script>
+<script src="../gate/challenges/poem.js"></script>
+<script src="../limit/limit.js" data-game="gun-game"></script>
+
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/map.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/world.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+<script src="../playclock/playclock.js"></script>
+</body>
+</html>

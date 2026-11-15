@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>键盘探险 · 打字闯关</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='8' width='28' height='18' rx='5' fill='%23d9b477'/><text x='16' y='23' font-family='monospace' font-size='13' font-weight='700' text-anchor='middle' fill='%232b1c12'>K</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="../index.html" aria-label="返回游戏合集">
+      <span class="brand-key">K</span>
+      <span class="brand-text"><b>键盘探险</b><i>Typing Quest</i></span>
+    </a>
+    <div class="top-actions">
+      <button class="chip-btn" id="sfxBtn" type="button">音效：开</button>
+      <button class="chip-btn" id="musicBtn" type="button">音乐：开</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== 视图：关卡地图 ===== -->
+    <section class="screen is-active" data-screen="map">
+      <div class="hero">
+        <div class="keycap keycap-big">
+          <div class="kc-face">
+            <span class="kc-label">50 关 · 10 章 · 每行第 5 关是总结战</span>
+            <h1>把键盘<br>练成第二双手</h1>
+            <p class="type-line"><span id="typeDemo"></span><span class="caret"></span></p>
+          </div>
+        </div>
+        <aside class="hero-side">
+          <div class="rank">
+            <span class="rank-label">当前段位</span>
+            <strong class="rank-name" id="rankName">键盘新手</strong>
+            <div class="rank-bar" role="progressbar" aria-label="段位进度"><i id="rankBar"></i></div>
+            <span class="rank-xp" id="rankXp">0 / 120 XP</span>
+          </div>
+          <div class="mini-stats" id="miniStats"></div>
+        </aside>
+      </div>
+
+      <div class="flow" id="flow">
+        <span class="flow-step" data-flow="practice"><b>1</b><em>先练一遍</em><i>完成本关练习</i></span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step" data-flow="token"><b>2</b><em>换一张券</em><i id="flowToken">练习券 0 / 1</i></span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step" data-flow="game"><b>3</b><em>玩一局</em><i>消耗 1 张练习券</i></span>
+      </div>
+
+      <div class="levels-head">
+        <div class="levels-title">
+          <h2>闯关路线</h2>
+          <button class="ghost-btn" type="button" data-action="growth">我的成长档案</button>
+        </div>
+        <p>一行五关就是一个章节：前四关学新的键位或新的词，第五关是这一行的总结战。<br>点任意一格直接进关：练过的关且手上有练习券，就直接开局；否则先练习。打勾是已通关，金点是练过未通关，皇冠是还没打的总结关，灰格子是还没解锁。</p>
+      </div>
+
+      <div class="map-sum">
+        <span class="map-sum-label">总进度</span>
+        <strong id="mapCount">已通过 0 / 50 关 · 总结关 0 / 10</strong>
+        <span class="map-bar" role="progressbar" aria-label="通关进度"><i id="mapBar"></i></span>
+      </div>
+
+      <div class="level-map" id="levelGrid"></div>
+    </section>
+
+    <!-- ===== 视图：练习 ===== -->
+    <section class="screen" data-screen="practice">
+      <div class="prac-head">
+        <button class="ghost-btn" type="button" data-action="map">← 关卡地图</button>
+        <div class="prac-title"><span id="pracLevelNo">01</span><b id="pracLevelName">基准键</b></div>
+        <span class="token-pill">练习券 <b id="pracToken">0</b></span>
+      </div>
+      <p class="prac-desc" id="pracDesc"></p>
+
+      <div class="prac-body">
+        <div class="key-focus" id="keyFocus">
+          <span class="kf-tip">请按下这个键</span>
+          <span class="kf-key" id="pracKey">F</span>
+          <span class="kf-finger" id="pracFinger">左手 · 食指</span>
+        </div>
+        <div class="prac-meter">
+          <div class="meter-row"><span>正确率</span><b id="pracAcc">100%</b></div>
+          <div class="meter-row"><span>速度</span><b id="pracCpm">0 字/分</b></div>
+          <div class="meter-row"><span>连击</span><b id="pracCombo">0</b></div>
+          <div class="meter-row"><span>进度</span><b id="pracCount">0 / 16</b></div>
+        </div>
+      </div>
+
+      <div class="prac-progress"><i id="pracBar"></i></div>
+      <div class="chips" id="pracChips"></div>
+      <p class="prac-hint" id="pracHint">手指放在基准键上，用对应的手指按下去。</p>
+
+      <div class="keyboard" id="pracKb"></div>
+      <p class="tip-line">下面是完整的美式键盘：这一课要练的键会亮起来，灰着的键以后才学；Shift、Enter、空格这些功能键也都在原位。没有实体键盘，直接点亮着的键就行。</p>
+
+      <div class="overlay is-fixed" id="practiceOverlay" hidden></div>
+    </section>
+
+    <!-- ===== 视图：游戏 ===== -->
+    <section class="screen" data-screen="game">
+      <div class="game-head">
+        <button class="ghost-btn" type="button" data-action="quitGame">退出</button>
+        <div class="ghud">
+          <div class="hud-item"><span>得分</span><b id="gScore">0</b></div>
+          <div class="hud-item"><span>连击</span><b id="gCombo">0</b></div>
+          <div class="hud-item"><span>剩余</span><b id="gTime">45s</b></div>
+          <div class="hud-lives" id="gLives"></div>
+        </div>
+        <button class="ghost-btn" type="button" data-action="pause">暂停</button>
+      </div>
+      <div class="goal-bar"><i id="gGoalBar"></i><span id="gGoalText">0 / 150</span></div>
+      <div class="field" id="field">
+        <div class="field-tip" id="fieldTip">看清字母，按对应的键</div>
+        <div class="overlay" id="gameOverlay" hidden></div>
+      </div>
+      <div class="game-keys" id="gameKeys"></div>
+    </section>
+
+    <!-- ===== 视图：成长档案 ===== -->
+    <section class="screen" data-screen="growth">
+      <div class="head-row">
+        <button class="ghost-btn" type="button" data-action="map">← 关卡地图</button>
+        <h2>成长档案</h2>
+        <button class="ghost-btn" type="button" data-action="reset">清空记录</button>
+      </div>
+
+      <div class="g-rank">
+        <div class="g-rank-top"><span>当前段位</span><strong id="gRankName">键盘新手</strong></div>
+        <div class="rank-bar"><i id="gRankBar"></i></div>
+        <span class="rank-xp" id="gRankXp"></span>
+      </div>
+
+      <div class="stat-grid" id="gStats"></div>
+
+      <div class="card-block">
+        <h3>最近七天 <em>每天练了多少下</em></h3>
+        <div class="chart" id="gChart"></div>
+      </div>
+
+      <div class="card-block">
+        <h3>成就墙 <em id="gBadgeCount"></em></h3>
+        <div class="badges" id="gBadges"></div>
+      </div>
+
+      <div class="card-block">
+        <h3>每一关的最好成绩</h3>
+        <div class="records" id="gRecords"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h3 id="modalTitle">确认</h3>
+    <p id="modalText"></p>
+    <div class="modal-actions">
+      <button class="ghost-btn" type="button" id="modalCancel">算了</button>
+      <button class="solid-btn" type="button" id="modalOk">确定</button>
+    </div>
+  </div>
+</div>
+
+  <script src="../limit/limit.js" data-game="typing"></script>
+<script src="js/config.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/practice.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/progress.js"></script>
+  <script src="js/growth.js"></script>
+  <script src="js/app.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

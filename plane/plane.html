@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>穿云战机 · SKYBORNE</title>
+    <link rel="stylesheet" href="plane.css">
+    <!-- 局间门禁：棋盘组件 + 遮罩样式 -->
+    <link rel="stylesheet" href="../twenty-four/css/board.css">
+    <link rel="stylesheet" href="../gate/gate.css">
+    <link rel="stylesheet" href="../gate/challenges.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a class="back-link" href="../index.html">← 返回首页</a>
+            <span class="brand">SHUTU GAME · NO.07</span>
+        </header>
+
+        <div class="frame" id="frame">
+            <canvas id="game" width="1280" height="720" aria-label="穿云战机游戏画面"></canvas>
+            <div class="scanlines" aria-hidden="true"></div>
+
+            <div class="hud" id="hud" aria-hidden="false">
+                <div class="hud-tl">
+                    <div class="score-row">
+                        <span class="hud-label">SCORE</span>
+                        <span class="score-val" id="hudScore">000000</span>
+                    </div>
+                    <div class="sub-row">
+                        <span id="hudBest">BEST 000000</span>
+                        <span class="sep">·</span>
+                        <span id="hudDist">0 m</span>
+                    </div>
+                    <div class="hearts" id="hearts"></div>
+                </div>
+
+                <div class="hud-tc">
+                    <div class="sector" id="hudSector">SECTOR 01 · 琥珀星云</div>
+                    <div class="combo" id="hudCombo" hidden>
+                        <b id="hudMult">×2</b>
+                        <span id="hudComboNum">连击 5</span>
+                    </div>
+                </div>
+
+                <div class="hud-tr">
+                    <button type="button" class="icon-btn" id="soundBtn" title="音效开关">♪</button>
+                    <button type="button" class="icon-btn" id="pauseBtn" title="暂停">❚❚</button>
+                </div>
+
+                <div class="hud-bottom">
+                    <div class="energy-wrap">
+                        <div class="energy-bar"><i id="energyFill"></i></div>
+                        <span class="energy-label" id="dashLabel">SPACE · 冲刺就绪</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overlay" id="menuOv">
+                <div class="panel menu-panel">
+                    <p class="kicker">SKYBORNE · FLIGHT 07</p>
+                    <h1 class="game-title">穿云战机</h1>
+                    <p class="lead">贴着钢壁擦身而过，把连击叠成倍率。护盾、时缓、冲刺，三件套用好了，才能飞得更远。</p>
+                    <ul class="keys">
+                        <li><b>鼠标 / 拖动</b><span>上下操控战机，越贴近障碍越容易触发擦身</span></li>
+                        <li><b>W S ↑ ↓</b><span>键盘同样可以操控</span></li>
+                        <li><b>空格 / 点击</b><span>冲刺闪避：短暂无敌，能撞碎陨石与无人机</span></li>
+                        <li><b>P / Esc</b><span>暂停航线</span></li>
+                    </ul>
+                    <div class="menu-actions">
+                        <button class="cta" id="startBtn"><span>起 飞</span><em>ENTER</em></button>
+                    </div>
+                    <p class="menu-best">最佳得分 <b id="menuBest">0</b> 分</p>
+                </div>
+            </div>
+
+            <div class="overlay" id="pauseOv" hidden>
+                <div class="panel small-panel">
+                    <p class="kicker">PAUSED</p>
+                    <h2 class="small-title">航线已暂停</h2>
+                    <p class="small-text">按 P / Esc 或点击下面的按钮继续。</p>
+                    <button class="cta" id="resumeBtn"><span>继续飞行</span></button>
+                </div>
+            </div>
+
+            <div class="overlay" id="overOv" hidden>
+                <div class="panel over-panel">
+                    <p class="kicker" id="overKicker">FLIGHT RECORD</p>
+                    <h2 class="over-title" id="overTitle">本次航程结束</h2>
+                    <div class="stats">
+                        <div><span>得分</span><b id="overScore">0</b></div>
+                        <div><span>航程</span><b id="overDist">0 m</b></div>
+                        <div><span>连击峰值</span><b id="overCombo">0</b></div>
+                        <div><span>最佳</span><b id="overBest">0</b></div>
+                    </div>
+                    <p class="record" id="overRecord" hidden>✦ 刷新了最佳记录</p>
+                    <p class="over-focus" id="overFocus"></p>
+                    <div class="over-actions">
+                        <button class="cta" id="retryBtn"><span>再飞一次</span></button>
+                        <a class="ghost" href="../index.html">回首页</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="zone-banner" id="zoneBanner" aria-live="polite"></div>
+
+            <button type="button" class="touch-dash" id="dashBtn">冲刺</button>
+        </div>
+
+        <p class="footnote">提示：擦身 + 连击倍率，护盾挡一次撞击，时缓让世界慢下来 —— 能量满了别舍不得用。</p>
+        <p class="rotate-hint">↻ 建议横屏游玩，航道更宽</p>
+    </div>
+
+    <!-- 局间门禁：24 点 + 唐诗题型 -->
+    <script src="../twenty-four/js/core.js"></script>
+    <script src="../twenty-four/js/board.js"></script>
+    <script src="../gate/gate.js"></script>
+    <script src="../gate/challenges/twenty-four.js"></script>
+    <script src="../poem/poem-data.js"></script>
+    <script src="../gate/challenges/poem.js"></script>
+    <script src="../limit/limit.js" data-game="plane"></script>
+    <script src="plane.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

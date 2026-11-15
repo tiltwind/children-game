@@ -1,0 +1,367 @@
+:root {
+    --bg-deep: #15100c;
+    --bg-soft: #241a13;
+    --panel: #2a1e16;
+    --line: #42301f;
+    --gold: #c9a56b;
+    --gold-soft: #e0c79b;
+    --text: #f2ebe2;
+    --dim: #a9988a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(900px 520px at 15% -10%, rgba(201, 165, 107, 0.14), transparent 60%),
+        radial-gradient(760px 460px at 95% 110%, rgba(120, 76, 45, 0.26), transparent 65%),
+        linear-gradient(160deg, var(--bg-soft) 0%, var(--bg-deep) 55%, #100b08 100%);
+    color: var(--text);
+    font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.game-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px 16px 24px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 6px;
+    color: var(--dim);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+}
+
+.back-link:hover {
+    color: var(--gold-soft);
+    text-decoration: underline;
+}
+
+.title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--gold-soft);
+}
+
+.icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--dim);
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold-soft);
+}
+
+/* ---------- 模式切换 ---------- */
+.mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.mode-tab {
+    padding: 9px 0;
+    font-size: 13px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--dim);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.mode-tab:hover {
+    color: var(--gold-soft);
+    border-color: rgba(201, 165, 107, 0.55);
+}
+
+.mode-tab.is-active {
+    background: linear-gradient(135deg, #d8b47b, #b98f55);
+    border-color: var(--gold);
+    color: #241709;
+    font-weight: 600;
+}
+
+.mode-tip {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--dim);
+}
+
+/* ---------- 布局 ---------- */
+.layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.side {
+    display: contents;
+}
+
+.stage {
+    order: 2;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.hud {
+    order: 1;
+}
+
+.controls {
+    order: 3;
+}
+
+.pad {
+    order: 4;
+}
+
+/* ---------- 数据面板 ---------- */
+.hud {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px 8px;
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+}
+
+.hud-item {
+    min-width: 0;
+}
+
+.hud-item.is-next {
+    text-align: center;
+}
+
+.hud-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--dim);
+}
+
+.hud-value {
+    display: block;
+    margin-top: 2px;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+#nextCanvas {
+    display: block;
+    margin: 2px auto 0;
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #191209;
+}
+
+/* ---------- 棋盘 ---------- */
+#gameCanvas {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: clamp(300px, calc(100vh - 400px), 600px);
+    aspect-ratio: 1 / 2;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #120d09;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 0 60px rgba(0, 0, 0, 0.4);
+}
+
+.toast {
+    position: absolute;
+    top: 16%;
+    left: 50%;
+    padding: 7px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    background: rgba(201, 165, 107, 0.16);
+    border: 1px solid rgba(201, 165, 107, 0.5);
+    color: var(--gold-soft);
+}
+
+.toast.is-show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.toast.is-warn {
+    background: rgba(233, 102, 92, 0.15);
+    border-color: rgba(233, 102, 92, 0.55);
+    color: #f2a79f;
+}
+
+/* ---------- 按钮 ---------- */
+.controls {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    flex: 1;
+    padding: 11px 0;
+    font-size: 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.btn:hover {
+    border-color: var(--gold);
+}
+
+.btn.is-primary {
+    border: none;
+    font-weight: 600;
+    color: #241709;
+    background: linear-gradient(135deg, #d8b47b, #b98f55);
+}
+
+.pad {
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+}
+
+.pad button {
+    padding: 13px 0;
+    font-size: 17px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.pad button:active {
+    background: #3a2a1d;
+}
+
+.instructions {
+    margin-top: 14px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.8;
+}
+
+button:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+}
+
+/* ---------- 触屏 ---------- */
+@media (hover: none) and (pointer: coarse) {
+    .pad {
+        display: grid;
+    }
+
+    .instructions {
+        display: none;
+    }
+
+    /* 底部固定的徽标（局数 / 休息 / 门禁）会压住触控键，本页在触屏上隐藏 */
+    .limit-badge,
+    .gate-badge,
+    .pc-badge {
+        display: none !important;
+    }
+
+    #gameCanvas {
+        height: clamp(280px, calc(100vh - 420px), 600px);
+    }
+}
+
+/* 窄屏下底部固定的徽标会压住按钮，本页统一隐藏 */
+@media (max-width: 619px) {
+    .limit-badge,
+    .gate-badge,
+    .pc-badge {
+        display: none !important;
+    }
+}
+
+/* ---------- 桌面：棋盘 + 侧栏 ---------- */
+@media (min-width: 620px) {
+    .game-container {
+        padding: 20px 20px 24px;
+    }
+
+    .layout {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .side {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 232px;
+        width: 232px;
+        gap: 12px;
+    }
+
+    .hud {
+        order: 0;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stage {
+        order: 0;
+    }
+
+    .controls {
+        order: 0;
+    }
+
+    .pad {
+        order: 0;
+    }
+
+    #gameCanvas {
+        height: clamp(420px, calc(100vh - 250px), 600px);
+    }
+}

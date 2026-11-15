@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>唐诗小状元 · 诗词接龙</title>
+    <link rel="stylesheet" href="poem.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a class="back-link" href="../index.html">← 返回首页</a>
+
+            <div class="brand">
+                <span class="seal" aria-hidden="true">诗</span>
+                <div class="brand-copy">
+                    <p class="eyebrow">诗词小书院</p>
+                    <h1>唐诗小状元</h1>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" title="开关音效">🔊</button>
+                <button class="ghost-btn" id="restartBtn" type="button">重新开始</button>
+            </div>
+        </header>
+
+        <main class="main">
+            <section class="stats" aria-label="答题成绩">
+                <div class="stat">
+                    <span class="stat-label">答对</span>
+                    <strong class="stat-value" id="score">0</strong>
+                    <span class="stat-unit">题</span>
+                </div>
+                <div class="stat stat-streak">
+                    <span class="stat-label">连对</span>
+                    <strong class="stat-value" id="streak">0</strong>
+                    <span class="stat-unit">题</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">最高连对</span>
+                    <strong class="stat-value" id="best">0</strong>
+                    <span class="stat-unit">题</span>
+                </div>
+            </section>
+
+            <div class="level-row" role="group" aria-label="选择年级">
+                <span class="level-label">题目范围</span>
+                <div class="level-tabs" id="levelTabs">
+                    <button class="level-tab is-active" type="button" data-group="all">全部</button>
+                    <button class="level-tab" type="button" data-group="low">一、二年级</button>
+                    <button class="level-tab" type="button" data-group="mid">三、四年级</button>
+                    <button class="level-tab" type="button" data-group="high">五、六年级</button>
+                </div>
+            </div>
+
+            <section class="quiz-card" aria-labelledby="upLine">
+                <div class="quiz-top">
+                    <span class="quiz-no" id="questionNo">第 1 题</span>
+                    <div class="quiz-tags">
+                        <span class="quiz-tag" id="gradeTag">一年级</span>
+                        <span class="quiz-tag" id="lengthTag">五言</span>
+                    </div>
+                </div>
+
+                <p class="prompt-label">这句诗的下一句是——</p>
+                <blockquote class="up-line" id="upLine">“白日依山尽”</blockquote>
+
+                <div class="options" id="options" role="group" aria-label="选择下一句"></div>
+
+                <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+                <div class="quiz-actions">
+                    <button class="primary-btn" id="nextBtn" type="button" hidden>下一题 →</button>
+                    <button class="speak-btn" id="speakBtn" type="button">🔊 读上句</button>
+                </div>
+            </section>
+
+            <p class="page-tip"><span aria-hidden="true">🐼</span> 小书童说：先读上句，再从四个选项里找出下一句。连对 5 题会有小奖励。</p>
+        </main>
+
+        <footer class="footer">
+            <span>已收录 <b id="poemCount">64</b> 首小学唐诗 · 当前范围 <b id="questionCount">210</b> 道题</span>
+            <span>SHUTU GAME · 诗词小书院</span>
+        </footer>
+    </div>
+
+    <div class="reward" id="reward" hidden>
+        <div class="reward-card" role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+            <div class="reward-stars" aria-hidden="true">⭐</div>
+            <p class="reward-kicker">小状元奖励</p>
+            <h2 class="reward-title" id="rewardTitle">连对 5 题！</h2>
+            <p class="reward-text" id="rewardText">你把诗句记得真牢，送你一颗小星星。</p>
+            <div class="reward-seal" aria-hidden="true">状元</div>
+            <button class="primary-btn reward-btn" id="rewardBtn" type="button">继续闯关 →</button>
+        </div>
+    </div>
+
+    <script src="poem-data.js"></script>
+    <script src="../limit/limit.js" data-game="poem"></script>
+<script src="poem.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

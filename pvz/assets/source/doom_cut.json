@@ -1,0 +1,40 @@
+{
+  "agent_hint": {
+    "arguments": {
+      "questions": [
+        {
+          "display_message": "当前链接有效期为 24 小时，是否需要转存为 7 天有效期链接？",
+          "display_option": [
+            {
+              "description": "直接交付当前链接，24 小时后失效",
+              "label": "使用 24 小时链接",
+              "option_id": "keep_24h"
+            },
+            {
+              "description": "下载并上传后交付，需要额外耗时",
+              "label": "转存为 7 天链接",
+              "option_id": "transfer_7d"
+            }
+          ],
+          "header": "产物链接确认",
+          "question_id": "mediakit_delivery_choice"
+        }
+      ]
+    },
+    "next_tool": "interaction_ask",
+    "required": true,
+    "type": "mediakit_artifact_delivery"
+  },
+  "image_format": "png",
+  "image_height": 946,
+  "image_size": 474470,
+  "image_url": "https://mediakit-image.cn-beijing.volces.com/tos-cn-i-mcagdqv95q/veImageX-store/imagesegment/2eee7821-e0e8-4f1b-840a-5824348af953/ab7963a621cbab2a9ff476d19e4ed359a1de6037a7b705751cb68cda2c934aeb.png~tplv-mcagdqv95q-image.image?sign=1794632194-rand-imagex-19a6ee8dc35cee7f08e6fa1d8392ceea",
+  "image_width": 1014,
+  "request_id": "20261114125535CFE21D26B575A34ACAC6",
+  "success": true,
+  "task_id": "amk-tool-remove-image-background-1935936702978",
+  "task_type": "remove-image-background",
+  "usage": {
+    "normalized_usage": 0.00138
+  }
+}

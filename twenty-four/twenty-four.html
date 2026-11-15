@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24 点 · 数字牌桌</title>
+    <meta name="description" content="四张牌各用一次，用加减乘除凑出 24。支持入门、经典、进阶、高手、禁除和扑克牌六种模式，也能作为其他游戏的局间关卡。">
+    <link rel="stylesheet" href="css/board.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+    <div class="page">
+        <nav class="topline">
+            <a class="back" href="../index.html"><span class="arrow">←</span>游戏合集</a>
+            <span>05 / 益智</span>
+        </nav>
+
+        <header class="masthead">
+            <div class="masthead-grid">
+                <div class="intro">
+                    <div class="mascot-line">
+                        <span class="mascot-face" aria-hidden="true">🐻</span>
+                        <p class="mascot-say">豆豆陪你玩，答对有星星！</p>
+                    </div>
+                    <div class="kicker">Four Cards / Twenty-Four</div>
+                    <h1 class="title">把四张牌，<br>凑成二十四。</h1>
+                    <p class="lede">
+                        点两张牌，再点一个运算符，把它们合成一张。四张牌全部用完，
+                        最后一张正好是 24。算对就有奖励，豆豆在等你哦。
+                    </p>
+                </div>
+                <aside class="scoreboard" aria-label="战绩">
+                    <div class="score-row">
+                        <span>已解</span>
+                        <b id="statSolved">0</b>
+                    </div>
+                    <div class="score-row">
+                        <span>连胜</span>
+                        <b id="statStreak">0</b>
+                    </div>
+                    <div class="score-row">
+                        <span>最快</span>
+                        <b id="statBest">—</b>
+                    </div>
+                </aside>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="table" aria-label="24 点牌桌">
+                <div class="table-top">
+                    <nav class="modes" id="modeBar" aria-label="难度模式"></nav>
+                    <div class="target"><span>🎯 目标</span><b>24</b></div>
+                </div>
+
+                <div class="table-note">
+                    <span class="note-pill">本关</span>
+                    <span id="puzzleMeta">经典 · 难度 适中</span>
+                    <span class="table-timer">⏱ <span id="timer">0:00</span></span>
+                </div>
+
+                <div class="player">
+                    <div id="board"></div>
+                </div>
+
+                <div class="table-actions" id="actions">
+                    <button type="button" data-act="undo"><span aria-hidden="true">↩️</span>撤销</button>
+                    <button type="button" data-act="reset"><span aria-hidden="true">🔄</span>重开</button>
+                    <button type="button" data-act="hint" id="hintBtn"><span aria-hidden="true">💡</span>提示<em id="hintLeft">2</em></button>
+                    <button type="button" data-act="skip"><span aria-hidden="true">🎲</span>换一题</button>
+                </div>
+
+                <form class="type" id="typeForm" autocomplete="off">
+                    <label for="exprInput">✏️ 也可以直接写算式，四个数各用一次</label>
+                    <div class="type-row">
+                        <input id="exprInput" type="text" inputmode="text" spellcheck="false"
+                            placeholder="例如 (6 + 6) × (3 - 1)">
+                        <button type="submit">验证</button>
+                    </div>
+                    <p class="type-msg" id="typeMsg" role="status" aria-live="polite"></p>
+                </form>
+            </section>
+
+            <aside class="rail">
+                <section class="rail-block">
+                    <h2>🧮 怎么算</h2>
+                    <ol>
+                        <li>四张牌的数字各用一次，一个也不能少。</li>
+                        <li>任意两张牌都能合成；减法自动大数减小数，除法优先整除。</li>
+                        <li>只剩一张牌，且等于 24，就算通过。</li>
+                    </ol>
+                </section>
+
+                <section class="rail-block">
+                    <h2>📒 本局</h2>
+                    <dl class="rail-dl">
+                        <div><dt>模式</dt><dd id="railMode">经典</dd></div>
+                        <div><dt>难度</dt><dd id="railDifficulty">适中</dd></div>
+                        <div><dt>解法</dt><dd id="railSolutions">—</dd></div>
+                        <div><dt>步数</dt><dd id="railMoves">0</dd></div>
+                    </dl>
+                </section>
+
+                <section class="rail-block rail-note">
+                    <h2>🧩 也能当关卡</h2>
+                    <p>同一套门禁可以嵌进任何游戏：每玩满 5 分钟，从题库随机抽一道——24 点或唐诗接下句，解出来才继续。</p>
+                    <code class="rail-code">var gate = Gate.create({
+  everyMinutes: 5,
+  challenges: ['twenty-four', 'poem'],
+  onLock: pause,
+  onUnlock: resume
+});</code>
+                </section>
+            </aside>
+        </main>
+
+        <footer class="footer">
+            <span>🐻 豆豆陪你 · 四张牌 · 凑成 24</span>
+            <span><a href="../index.html">返回游戏合集</a></span>
+        </footer>
+    </div>
+
+    <!-- 奖励弹窗 -->
+    <div class="reward" id="result" hidden>
+        <div class="reward-scrim"></div>
+        <section class="reward-card" role="dialog" aria-modal="true" aria-labelledby="rewardTitle">
+            <div class="confetti" id="confetti" aria-hidden="true"></div>
+            <div class="reward-mascot" aria-hidden="true">🐻</div>
+            <p class="reward-kicker">解出来啦</p>
+            <h2 class="reward-title" id="rewardTitle">太棒了！</h2>
+            <div class="reward-stars" id="rewardStars" role="img" aria-label="三颗星"></div>
+            <p class="result-expr" id="resultExpr"></p>
+            <div class="reward-meta">
+                <span id="resultTime"></span>
+                <span id="resultDifficulty"></span>
+            </div>
+            <p class="reward-streak" id="rewardStreak"></p>
+            <button type="button" class="next-btn" id="nextBtn">再来一题 <span aria-hidden="true">→</span></button>
+            <p class="reward-tip">按 Enter 也能继续</p>
+        </section>
+    </div>
+
+    <button type="button" class="music-btn" id="musicBtn" aria-pressed="true" aria-label="背景音乐开关">
+        <span class="music-icon" aria-hidden="true">🎵</span>
+        <span class="music-label">音乐</span>
+    </button>
+    <audio id="bgm" src="assets/bgm.m4a" loop preload="auto"></audio>
+
+    <script src="../limit/limit.js" data-game="twenty-four"></script>
+<script src="js/core.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/app.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

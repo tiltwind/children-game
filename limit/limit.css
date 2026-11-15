@@ -1,0 +1,254 @@
+/* ============================================================
+ * limit.css —— 单游戏局数上限与冷却的界面样式
+ * 与 index.css / playclock.css 同一套咖啡金配色
+ * ============================================================ */
+
+/* ---------- 首页卡片：右上角次数胶囊 ---------- */
+.limit-chip {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    line-height: 1.6;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    color: #d8c3a2;
+    background: rgba(16, 11, 7, 0.62);
+    border: 1px solid rgba(201, 165, 107, 0.26);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.limit-chip.is-locked {
+    color: #ffb27a;
+    border-color: rgba(255, 159, 122, 0.5);
+    background: rgba(38, 18, 10, 0.7);
+}
+
+/* ---------- 首页卡片：锁定时整体压暗 ---------- */
+.card.is-locked {
+    cursor: not-allowed;
+}
+
+.card.is-locked .card-cover img {
+    filter: grayscale(0.62) brightness(0.48);
+    transform: none;
+}
+
+.card.is-locked .card-name {
+    color: #8a7765;
+}
+
+.card.is-locked .card-desc {
+    color: #77685a;
+}
+
+.card.is-locked .tags,
+.card.is-locked .enter {
+    opacity: 0.55;
+}
+
+.card.is-locked:hover {
+    transform: none;
+    border-color: var(--line);
+    box-shadow: none;
+}
+
+.card.is-locked:hover::after {
+    opacity: 0;
+}
+
+.limit-lock {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 22px;
+    color: #f3e2c6;
+    background: rgba(10, 7, 4, 0.4);
+    letter-spacing: 0.1em;
+}
+
+.limit-lock span {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: #e7cba2;
+}
+
+.card.is-locked .limit-lock {
+    display: flex;
+}
+
+/* ---------- 游戏页：剩余次数徽标 ---------- */
+.limit-badge {
+    position: fixed;
+    right: 18px;
+    bottom: 68px;
+    z-index: 9997;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: #dcc6a4;
+    background: rgba(24, 16, 11, 0.86);
+    border: 1px solid rgba(216, 176, 115, 0.32);
+    border-radius: 12px;
+    box-shadow: 0 10px 24px -18px #000;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+.limit-badge-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.limit-badge.is-locked {
+    color: #ffb27a;
+    border-color: rgba(255, 159, 122, 0.55);
+}
+
+/* ---------- 弹层：锁定提示 ---------- */
+.limit-modal,
+.limit-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9996;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(11, 7, 4, 0.74);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.limit-modal[hidden] {
+    display: none;
+}
+
+.limit-panel {
+    width: min(420px, 92vw);
+    padding: 26px 26px 22px;
+    text-align: center;
+    background: linear-gradient(165deg, #2e2219 0%, #1c130d 100%);
+    border: 1px solid rgba(201, 165, 107, 0.38);
+    border-radius: 18px;
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(201, 165, 107, 0.08) inset;
+}
+
+.limit-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.limit-kicker {
+    margin-top: 12px;
+    font-size: 10.5px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #c9a56b;
+}
+
+.limit-title {
+    margin-top: 10px;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: #f2ebe2;
+}
+
+.limit-text {
+    margin-top: 9px;
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: #b3a091;
+}
+
+.limit-count {
+    margin-top: 14px;
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    color: #e8c48c;
+}
+
+.limit-tip {
+    margin-top: 6px;
+    font-size: 11.5px;
+    line-height: 1.8;
+    color: #8b7868;
+}
+
+.limit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.limit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #e7d6b8;
+    text-decoration: none;
+    background: rgba(201, 165, 107, 0.08);
+    border: 1px solid rgba(201, 165, 107, 0.34);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+}
+
+.limit-btn:hover {
+    background: rgba(201, 165, 107, 0.16);
+    border-color: rgba(201, 165, 107, 0.55);
+}
+
+.limit-btn.is-primary {
+    font-weight: 600;
+    color: #2a1c11;
+    background: linear-gradient(120deg, #d3ae74, #a9834b);
+    border-color: transparent;
+}
+
+.limit-btn.is-primary:hover {
+    background: linear-gradient(120deg, #e0bd85, #b58e53);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 560px) {
+    .limit-badge {
+        right: 12px;
+        bottom: 56px;
+        font-size: 11px;
+        padding: 7px 10px;
+    }
+
+    .limit-panel {
+        padding: 22px 20px 18px;
+    }
+
+    .limit-count {
+        font-size: 26px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .limit-btn {
+        transition: none;
+    }
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>草坪守卫战 · 植物大战僵尸</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232a3d1c'/%3E%3Ccircle cx='16' cy='13' r='8' fill='%238fd05a'/%3E%3Ccircle cx='19' cy='13' r='3.4' fill='%231b2b12'/%3E%3Cpath d='M16 21v7M12 26h8' stroke='%236fae43' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- 24 点局间门禁：棋盘组件 + 遮罩样式 -->
+  <link rel="stylesheet" href="../twenty-four/css/board.css">
+  <link rel="stylesheet" href="../gate/gate.css">
+  <link rel="stylesheet" href="../gate/challenges.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+<div class="app" id="app">
+  <canvas id="stage"></canvas>
+
+  <!-- ===== 战斗 HUD ===== -->
+  <div class="hud" id="hud">
+    <div class="topbar">
+      <div class="sun-panel">
+        <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="7"/>
+          <path d="M12 1.6v3M12 19.4v3M1.6 12h3M19.4 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M19.4 4.6l-2.1 2.1M6.7 17.3l-2.1 2.1"/>
+        </svg>
+        <span id="sunCount">150</span>
+      </div>
+
+      <div class="level-panel">
+        <div class="level-name" id="levelName">草坪守卫战</div>
+        <div class="wave-track"><div class="wave-fill" id="waveFill"></div></div>
+        <div class="wave-text" id="waveText">0 / 4</div>
+      </div>
+
+      <div class="top-actions">
+        <button class="chip" id="btnPause" type="button">暂停</button>
+        <button class="chip" id="btnMute" type="button">音效开</button>
+        <button class="chip" id="btnMusic" type="button">音乐开</button>
+        <button class="chip" id="btnMenu" type="button">选关</button>
+        <button class="chip" id="btnHelp" type="button">玩法</button>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="seed-bar" id="seedBar"></div>
+      <button class="shovel-btn" id="shovelBtn" type="button" title="铲除已种下的植物">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v9" stroke="#3a2412" stroke-width="2" fill="none"/>
+          <path d="M9 2h6v3H9z" fill="#6b4522"/>
+          <path d="M7 12h10l-1.4 6.2A2 2 0 0 1 13.7 20H10.3a2 2 0 0 1-1.9-1.8L7 12z" fill="#8d9a84"/>
+        </svg>
+        <span>铲子</span>
+      </button>
+    </div>
+
+    <div class="toast-layer" id="toastLayer"></div>
+    <div class="wave-banner hidden" id="waveBanner"></div>
+  </div>
+
+  <!-- ===== 开始页 ===== -->
+  <div class="start-screen" id="startScreen">
+    <div class="start-inner">
+      <div class="kicker">SHUTU GAME · 04</div>
+      <h1>植物大战僵尸<span>草坪守卫战</span></h1>
+      <p>五条通道，十二关层层加压。种下向日葵攒阳光，用豌豆、卷心菜和狙击枪把僵尸挡在草坪上；撑过全部波次，草坪就是你的。</p>
+      <div class="start-actions">
+        <button class="btn primary" id="btnStart" type="button">开始闯关</button>
+        <button class="btn ghost" id="btnStartHelp" type="button">玩法说明</button>
+      </div>
+      <div class="start-meta">鼠标或触屏操作 · 声音默认开启，可随时关闭</div>
+    </div>
+  </div>
+
+  <!-- ===== 弹窗容器 ===== -->
+  <div class="modal-layer hidden" id="modalLayer">
+    <div class="modal-box" id="modalBox"></div>
+  </div>
+</div>
+
+<!-- 模块按依赖顺序加载：配置 → 工具 → 音效 → 资源 → 实体 → 世界 → 渲染 → 界面 → 主控 -->
+<script src="../twenty-four/js/core.js"></script>
+<script src="../twenty-four/js/board.js"></script>
+<script src="../gate/gate.js"></script>
+<script src="../gate/challenges/twenty-four.js"></script>
+<script src="../poem/poem-data.js"></script>
+<script src="../gate/challenges/poem.js"></script>
+<script src="../limit/limit.js" data-game="pvz"></script>
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/world.js"></script>
+<script src="js/render.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/game.js"></script>
+<script src="js/app.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

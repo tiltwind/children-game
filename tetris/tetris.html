@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块</title>
+    <link rel="stylesheet" href="tetris-style.css">
+    <!-- 24 点局间门禁：棋盘组件 + 遮罩样式 -->
+    <link rel="stylesheet" href="../twenty-four/css/board.css">
+    <link rel="stylesheet" href="../gate/gate.css">
+    <link rel="stylesheet" href="../gate/challenges.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+    <div class="game-container">
+        <a class="back-link" href="../index.html">← 返回首页</a>
+
+        <div class="title-row">
+            <h1>俄罗斯方块</h1>
+            <button id="soundBtn" class="icon-btn" type="button" aria-label="关闭音效">🔊</button>
+        </div>
+
+        <div class="mode-tabs" role="tablist" aria-label="游戏模式">
+            <button class="mode-tab is-active" type="button" data-mode="classic" role="tab">经典</button>
+            <button class="mode-tab" type="button" data-mode="sprint" role="tab">冲刺</button>
+            <button class="mode-tab" type="button" data-mode="riser" role="tab">上升</button>
+            <button class="mode-tab" type="button" data-mode="dig" role="tab">挖洞</button>
+            <button class="mode-tab" type="button" data-mode="invisible" role="tab">隐形</button>
+        </div>
+        <p class="mode-tip" id="modeTip">经典玩法：消行升级，下落越来越快，堆到顶就结束。</p>
+
+        <div class="layout">
+            <div class="stage">
+                <canvas id="gameCanvas" width="300" height="600"></canvas>
+                <div class="toast" id="toast" aria-live="polite"></div>
+            </div>
+
+            <aside class="side">
+                <div class="hud">
+                    <div class="hud-item">
+                        <span class="hud-label">分数</span>
+                        <span class="hud-value" id="score">0</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label" id="goalLabel">等级</span>
+                        <span class="hud-value" id="goalValue">1</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">时间</span>
+                        <span class="hud-value" id="timeValue">0:00</span>
+                    </div>
+                    <div class="hud-item is-next">
+                        <span class="hud-label">下一个</span>
+                        <canvas id="nextCanvas" width="80" height="80"></canvas>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="pauseBtn" class="btn is-primary" type="button">暂停</button>
+                    <button id="restartBtn" class="btn" type="button">再来一局</button>
+                </div>
+
+                <div class="pad" id="pad">
+                    <button type="button" data-act="left" aria-label="左移">←</button>
+                    <button type="button" data-act="rotate" aria-label="旋转">⟳</button>
+                    <button type="button" data-act="right" aria-label="右移">→</button>
+                    <button type="button" data-act="down" aria-label="下移">↓</button>
+                    <button type="button" data-act="drop" aria-label="速降">⇩</button>
+                </div>
+            </aside>
+        </div>
+
+        <div class="instructions">
+            <p>← → 移动,&nbsp; ↓ 下落,&nbsp; ↑ 旋转,&nbsp; 空格 速降,&nbsp; P 暂停,&nbsp; R 重开</p>
+        </div>
+    </div>
+    <script src="../twenty-four/js/core.js"></script>
+    <script src="../twenty-four/js/board.js"></script>
+    <script src="../gate/gate.js"></script>
+    <script src="../gate/challenges/twenty-four.js"></script>
+    <script src="../poem/poem-data.js"></script>
+    <script src="../gate/challenges/poem.js"></script>
+    <script src="../limit/limit.js" data-game="tetris"></script>
+    <script src="tetris-script.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

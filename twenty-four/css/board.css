@@ -1,0 +1,220 @@
+/* ============================================================
+ * board.css —— 24 点棋盘组件样式（独立页面与门禁共用）
+ * 视觉：深咖牌桌 + 暖金数字牌
+ * ============================================================ */
+
+.tf24-board {
+    --tf24-ink: #f6ecdd;
+    --tf24-dim: #b6a08c;
+    --tf24-gold: #d8b073;
+    --tf24-gold-soft: #e9d0a6;
+    --tf24-line: #573f2f;
+    --tf24-ok: #9dc08b;
+    --tf24-bad: #d98a70;
+    --tf24-hint: #e0b877;
+
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    outline: none;
+}
+
+.tf24-board .tf24-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(8px, 1.4vw, 14px);
+}
+
+.tf24-board .tf24-tile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 0.84;
+    padding: 0;
+    border: 1px solid rgba(216, 176, 115, 0.3);
+    border-radius: 18px;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 236, 200, 0.1), transparent 60%),
+        linear-gradient(165deg, #3d2b1e 0%, #241810 100%);
+    color: var(--tf24-gold-soft);
+    font-family: "Yuanti SC", "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+    font-size: clamp(34px, 5.6vw, 60px);
+    line-height: 1;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 238, 208, 0.16),
+        inset 0 -10px 22px rgba(0, 0, 0, 0.28),
+        0 12px 26px -18px rgba(0, 0, 0, 0.95);
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease,
+        background 0.22s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tf24-board .tf24-tile:hover {
+    border-color: rgba(216, 176, 115, 0.6);
+    transform: translateY(-3px);
+}
+
+.tf24-board .tf24-tile:focus-visible {
+    outline: 2px solid var(--tf24-gold);
+    outline-offset: 3px;
+}
+
+.tf24-board .tf24-tile.is-selected {
+    transform: translateY(-7px);
+    border-color: var(--tf24-gold);
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 240, 210, 0.2), transparent 62%),
+        linear-gradient(165deg, #4b3323 0%, #2c1d13 100%);
+    box-shadow:
+        0 0 0 1px rgba(216, 176, 115, 0.55),
+        0 20px 34px -16px rgba(216, 176, 115, 0.42),
+        inset 0 1px 0 rgba(255, 245, 220, 0.22);
+}
+
+.tf24-board .tf24-tile.is-merged {
+    color: var(--tf24-gold);
+}
+
+.tf24-board .tf24-tile.is-merged::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(216, 176, 115, 0.65);
+}
+
+.tf24-board .tf24-tile.is-long {
+    font-size: clamp(23px, 4vw, 38px);
+    letter-spacing: 0.02em;
+}
+
+.tf24-board .tf24-tile-value {
+    font-variant-numeric: tabular-nums;
+}
+
+.tf24-board .tf24-tile-key {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: rgba(182, 160, 140, 0.6);
+}
+
+.tf24-board .tf24-ops {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tf24-board .tf24-op {
+    flex: 1 1 0;
+    min-width: 56px;
+    height: 58px;
+    border: 1px solid rgba(216, 176, 115, 0.24);
+    border-radius: 16px;
+    background: linear-gradient(170deg, #2e2118, #211610);
+    color: var(--tf24-gold-soft);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tf24-board .tf24-op:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tf24-board .tf24-op:not(:disabled):hover {
+    background: linear-gradient(170deg, #3d2b1e, #2a1c13);
+    border-color: rgba(216, 176, 115, 0.7);
+}
+
+.tf24-board .tf24-op:not(:disabled):active {
+    transform: scale(0.96);
+}
+
+.tf24-board .tf24-ops.is-ready .tf24-op:not(:disabled) {
+    box-shadow: inset 0 0 0 1px rgba(216, 176, 115, 0.18);
+}
+
+.tf24-board .tf24-op:focus-visible {
+    outline: 2px solid var(--tf24-gold);
+    outline-offset: 2px;
+}
+
+.tf24-board .tf24-status {
+    min-height: 48px;
+    margin: 0;
+    padding: 12px 16px;
+    border-left: 3px solid rgba(216, 176, 115, 0.32);
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 0 12px 12px 0;
+    color: var(--tf24-dim);
+    font-size: 15.5px;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+}
+
+.tf24-board .tf24-status[data-tone="ready"] {
+    color: var(--tf24-gold-soft);
+    border-left-color: rgba(216, 176, 115, 0.7);
+}
+
+.tf24-board .tf24-status[data-tone="hint"] {
+    color: var(--tf24-hint);
+    border-left-color: var(--tf24-hint);
+}
+
+.tf24-board .tf24-status[data-tone="bad"] {
+    color: var(--tf24-bad);
+    border-left-color: rgba(217, 138, 112, 0.7);
+}
+
+.tf24-board .tf24-status[data-tone="ok"],
+.tf24-board .tf24-status[data-tone="ok is-solved"] {
+    color: var(--tf24-ok);
+    border-left-color: rgba(157, 192, 139, 0.8);
+    background: rgba(157, 192, 139, 0.08);
+}
+
+@media (max-width: 520px) {
+    .tf24-board .tf24-op {
+        height: 52px;
+        min-width: 48px;
+        font-size: 24px;
+    }
+
+    .tf24-board .tf24-tiles {
+        gap: 8px;
+    }
+
+    .tf24-board .tf24-tile {
+        border-radius: 14px;
+        aspect-ratio: 0.9;
+    }
+
+    .tf24-board .tf24-status {
+        font-size: 14.5px;
+    }
+
+    .tf24-board .tf24-tile-key {
+        top: 6px;
+        left: 7px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tf24-board .tf24-tile,
+    .tf24-board .tf24-op {
+        transition: none;
+    }
+}

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>门禁标准库自检</title>
+<link rel="stylesheet" href="../css/board.css">
+<link rel="stylesheet" href="../../gate/gate.css">
+<link rel="stylesheet" href="../../gate/challenges.css">
+</head>
+<body>
+<div id="board1"></div>
+<div id="board2"></div>
+<div id="board3"></div>
+<div id="board4"></div>
+<pre id="out"></pre>
+
+<script src="../js/core.js"></script>
+<script src="../js/board.js"></script>
+<script src="../../gate/gate.js"></script>
+<script src="../../gate/challenges/twenty-four.js"></script>
+<script src="../../gate/challenges/poem.js"></script>
+<script>
+var results = [];
+var pass = 0, fail = 0;
+function ok(cond, name, extra) {
+  if (cond) { pass++; results.push("ok   " + name); }
+  else { fail++; results.push("FAIL " + name + (extra ? " → " + extra : "")); }
+}
+function render() {
+  document.getElementById("out").textContent =
+    results.join("\n") + "\n\nRESULT " + pass + " passed, " + fail + " failed";
+}
+
+/* ---------------- 棋盘组件 ---------------- */
+
+var solvedInfo = null;
+var board1 = TF24Board.create(document.getElementById("board1"), {
+  target: 24,
+  onSolved: function (info) { solvedInfo = info; }
+});
+board1.load(TF24.analyze([3, 3, 8, 8], 24));
+
+ok(board1.tilesEl.children.length === 4, "载入后渲染四张牌");
+board1.tilesEl.children[0].click();
+board1.tilesEl.children[1].click();
+ok(board1.selected.length === 2, "点两张牌后进入待运算状态");
+board1.root.querySelector('[data-op="-"]').click();
+ok(board1.tiles.length === 3, "合成后少一张牌");
+board1.undo();
+ok(board1.tiles.length === 4, "撤销后恢复四张牌");
+var typed = board1.submitExpression("8/(3-8/3)");
+ok(typed.ok, "输入 8/(3-8/3) 判定通过", typed.error);
+ok(!!solvedInfo && solvedInfo.via === "typed", "onSolved 回调收到输入方式");
+
+var board2 = TF24Board.create(document.getElementById("board2"), { target: 24 });
+board2.load(TF24.analyze([3, 3, 8, 8], 24));
+var wrong = board2.submitExpression("3+3+8+8");
+ok(!wrong.ok && wrong.error.indexOf("22") >= 0, "错误算式给出实际结果", wrong.error);
+var short = board2.submitExpression("3*8");
+ok(!short.ok && short.error.indexOf("都用到") >= 0, "少用数字被拦下", short.error);
+
+/* ---------------- 自动排列顺序 ---------------- */
+
+var board3 = TF24Board.create(document.getElementById("board3"), { target: 24 });
+board3.load(TF24.analyze([2, 3, 8, 12], 24));
+ok(!board3.root.querySelector(".tf24-swap"), "不再需要手动交换顺序");
+
+board3.tilesEl.children[1].click(); // 3
+board3.tilesEl.children[3].click(); // 12
+board3.root.querySelector('[data-op="-"]').click();
+var mergedMinus = board3.tiles.filter(function (t) { return t.merged; })[0];
+ok(mergedMinus && mergedMinus.value.n === 9, "减法自动大数减小数，不出现负数");
+ok(TF24.formatTree(mergedMinus.tree).replace(/\s/g, "") === "12−3", "减法算式按大数在前", TF24.formatTree(mergedMinus.tree));
+ok(board3.message.text.indexOf("自动") >= 0, "提示说明已自动调整", board3.message.text);
+
+board3.load(TF24.analyze([2, 3, 8, 12], 24));
+board3.tilesEl.children[1].click(); // 3
+board3.tilesEl.children[2].click(); // 8
+board3.root.querySelector('[data-op="/"]').click();
+ok(board3.tiles.length === 4, "除不尽时不合并");
+ok(board3.message.text.indexOf("除不尽") >= 0, "除不尽时给出换牌提示", board3.message.text);
+
+board3.load(TF24.analyze([2, 3, 8, 12], 24));
+board3.tilesEl.children[0].click(); // 2
+board3.tilesEl.children[2].click(); // 8
+board3.root.querySelector('[data-op="/"]').click();
+var mergedDiv = board3.tiles.filter(function (t) { return t.merged; })[0];
+ok(mergedDiv && TF24.fEqualsNumber(mergedDiv.value, 4), "除法自动选能整除的方向");
+ok(TF24.formatTree(mergedDiv.tree).replace(/\s/g, "") === "8÷2", "除法算式按大数在前", TF24.formatTree(mergedDiv.tree));
+
+var board4 = TF24Board.create(document.getElementById("board4"), { target: 24 });
+board4.load(TF24.analyze([3, 3, 8, 8], 24));
+ok(board4.allowFraction, "必须用分数的题允许分数");
+board4.tilesEl.children[0].click(); // 3
+board4.tilesEl.children[2].click(); // 8
+board4.root.querySelector('[data-op="/"]').click();
+var mergedFraction = board4.tiles.filter(function (t) { return t.merged; })[0];
+ok(mergedFraction && mergedFraction.value.n === 8 && mergedFraction.value.d === 3,
+  "分数题自动按大数在前得到 8/3", mergedFraction && (mergedFraction.value.n + "/" + mergedFraction.value.d));
+ok(board4.message.text.indexOf("分数") >= 0, "提示说明这是分数中间结果", board4.message.text);
+
+/* ---------------- 题型注册 ---------------- */
+
+ok(!!Gate.get("twenty-four"), "注册了 24 点题型");
+ok(!!Gate.get("poem"), "注册了唐诗题型");
+ok(Gate.list().length >= 2, "题型列表可枚举", String(Gate.list().length));
+ok(window.TF24Gate === window.Gate, "保留 TF24Gate 兼容别名");
+
+var events = { lock: 0, unlock: 0, pass: 0, skip: 0 };
+document.addEventListener("gate:lock", function () { events.lock++; });
+document.addEventListener("gate:unlock", function () { events.unlock++; });
+document.addEventListener("gate:pass", function () { events.pass++; });
+document.addEventListener("gate:skip", function () { events.skip++; });
+
+/* ---------------- 24 点门禁闭环 ---------------- */
+
+var lockCalls = 0, unlockCalls = 0;
+var gate24 = Gate.create({
+  everyMinutes: 0.02,
+  challenges: ["twenty-four"],
+  unlockDelay: 300,
+  onLock: function () { lockCalls++; },
+  onUnlock: function () { unlockCalls++; }
+});
+
+ok(gate24.badge && gate24.badge.hidden === false, "创建后显示倒计时徽标");
+ok(/局间门禁/.test(gate24.badge.textContent), "徽标是通用文案", gate24.badge.textContent);
+
+gate24.tick(1.5);
+ok(gate24.locked, "累计到时间后自动打开门禁");
+ok(gate24.overlay.hidden === false, "遮罩可见");
+ok(gate24.challengeId === "twenty-four", "选中 24 点题型", gate24.challengeId);
+ok(lockCalls === 1 && events.lock === 1, "onLock 与 gate:lock 各触发一次");
+ok(gate24.bodyEl.querySelectorAll(".tf24-tile").length === 4, "24 点题面显示四张牌");
+ok(/24 点/.test(gate24.chipEl.textContent), "面板标注题型与难度", gate24.chipEl.textContent);
+
+gate24.overlay.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+ok(gate24.locked, "按 Esc 不能跳过门禁");
+ok(gate24.errorEl.textContent.length > 0, "Esc 后给出提示");
+
+var tiles = gate24.bodyEl.querySelectorAll(".tf24-tile-value");
+var nums = Array.prototype.map.call(tiles, function (t) {
+  return parseInt(t.textContent, 10);
+});
+var answer = TF24.analyze(nums, 24).bestSolution;
+ok(!!answer, "从牌面能算出参考答案", nums.join(","));
+
+var input = gate24.bodyEl.querySelector("#ch24-input");
+input.value = answer;
+gate24.bodyEl.querySelector(".ch24-type").dispatchEvent(
+  new Event("submit", { bubbles: true, cancelable: true })
+);
+ok(gate24.passed === 1, "24 点通过计数加一");
+ok(events.pass === 1, "派发 gate:pass 事件");
+
+/* ---------------- 唐诗门禁 ---------------- */
+
+var gatePoem = Gate.create({
+  everyMinutes: 60,
+  challenges: ["poem"],
+  unlockDelay: 300
+});
+gatePoem.openNow();
+ok(gatePoem.challengeId === "poem", "可以单独指定唐诗题型", gatePoem.challengeId);
+var qEl = gatePoem.bodyEl.querySelector(".chpoem-q");
+ok(!!qEl && qEl.textContent.length > 4, "唐诗题面显示上句", qEl && qEl.textContent);
+var opts = gatePoem.bodyEl.querySelectorAll(".chpoem-opt");
+ok(opts.length === 4, "给出四个选项", String(opts.length));
+
+var wrongOpt = gatePoem.bodyEl.querySelector('.chpoem-opt[data-right="0"]');
+wrongOpt.click();
+ok(wrongOpt.disabled && wrongOpt.classList.contains("is-wrong"), "错误选项被标出并禁用");
+ok(gatePoem.bodyEl.querySelector(".chpoem-msg").textContent.length > 0, "错误后给出提示");
+
+var rightOpt = gatePoem.bodyEl.querySelector('.chpoem-opt[data-right="1"]');
+rightOpt.click();
+ok(gatePoem.passed === 1, "选对后通过");
+
+/* ---------------- 随机与不重复 ---------------- */
+
+var gateMix = Gate.create({
+  everyMinutes: 60,
+  challenges: ["twenty-four", "poem"],
+  unlockDelay: 300,
+  random: function () { return 0; }
+});
+gateMix.openNow();
+var first = gateMix.challengeId;
+gateMix.skipPuzzle();
+var second = gateMix.challengeId;
+gateMix.skipPuzzle();
+var third = gateMix.challengeId;
+ok(first === "twenty-four", "随机取到第一道", first);
+ok(second === "poem", "换一题时避开上一道", second);
+ok(third === "twenty-four", "再换又回到 24 点", third);
+ok(events.skip === 2, "每次换题派发 gate:skip", String(events.skip));
+
+/* ---------------- 关闭与恢复 ---------------- */
+
+setTimeout(function () {
+  ok(!gate24.locked, "24 点门禁通过后自动关闭");
+  ok(gate24.badge.hidden === false, "关闭后徽标重新出现");
+  ok(unlockCalls === 1 && events.unlock >= 1, "onUnlock 与 gate:unlock 触发");
+  ok(gate24.bodyEl.children.length === 0 || gate24.bodyEl.textContent.trim() === "", "关闭后清空题面");
+
+  var described = gate24.describe();
+  ok(described.passed === 1 && described.challenge === "twenty-four", "describe 返回状态", JSON.stringify(described));
+
+  gate24.destroy();
+  gatePoem.destroy();
+  gateMix.destroy();
+  ok(document.querySelector(".gate") === null, "销毁后遮罩移除");
+  ok(document.querySelectorAll(".gate-badge").length === 0, "销毁后徽标移除");
+  render();
+}, 700);
+</script>
+</body>
+</html>
