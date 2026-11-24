@@ -283,3 +283,328 @@
         padding: 11px 13px;
     }
 }
+
+/* ---------------- 口算填空 ---------------- */
+
+.chcalc {
+    margin: 0 -4px;
+    padding: 4px;
+}
+
+.chcalc-label {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    color: #a8927c;
+}
+
+.chcalc-q {
+    margin-top: 12px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 34px;
+    line-height: 1.25;
+    letter-spacing: 0.04em;
+    color: #f3e7d3;
+    text-align: center;
+    padding: 16px 10px;
+    border: 1px solid rgba(216, 176, 115, 0.22);
+    border-radius: 12px;
+    background: rgba(12, 8, 5, 0.5);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.chcalc-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.chcalc-input {
+    flex: 1;
+    min-width: 0;
+    height: 50px;
+    padding: 0 16px;
+    border: 1px solid rgba(216, 176, 115, 0.3);
+    border-radius: 10px;
+    background: rgba(12, 8, 5, 0.55);
+    color: #f3e7d3;
+    font-size: 20px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.06em;
+}
+
+.chcalc-input:focus {
+    border-color: rgba(255, 176, 58, 0.75);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 176, 58, 0.12);
+}
+
+.chcalc-input::placeholder {
+    color: rgba(182, 160, 140, 0.55);
+    font-size: 15px;
+    letter-spacing: 0;
+}
+
+.chcalc-submit {
+    height: 50px;
+    padding: 0 22px;
+    border: 1px solid rgba(255, 176, 58, 0.55);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255, 176, 58, 0.24), rgba(255, 122, 26, 0.12));
+    color: #ffe7c2;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    cursor: pointer;
+}
+
+.chcalc-submit:hover:not(:disabled) {
+    border-color: rgba(255, 196, 106, 0.85);
+}
+
+.chcalc-submit:disabled,
+.chcalc-input:disabled {
+    opacity: 0.66;
+    cursor: default;
+}
+
+.chcalc-hint {
+    margin-top: 10px;
+    padding: 9px 11px;
+    border-left: 2px solid rgba(255, 176, 58, 0.55);
+    background: rgba(255, 176, 58, 0.07);
+    border-radius: 0 6px 6px 0;
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #d9c3a6;
+}
+
+.chcalc-msg {
+    min-height: 20px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #b6a08c;
+}
+
+.chcalc-msg.is-bad {
+    color: #ff9c8c;
+}
+
+.chcalc-msg.is-ok {
+    color: #7ef0c0;
+}
+
+.chcalc.is-wrong .chcalc-q {
+    animation: chcalc-shake 0.4s ease;
+    border-color: rgba(255, 107, 116, 0.55);
+}
+
+.chcalc.is-passed .chcalc-q {
+    border-color: rgba(126, 240, 192, 0.6);
+    color: #d9fff6;
+}
+
+@keyframes chcalc-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+@media (max-width: 560px) {
+    .chcalc-q {
+        font-size: 26px;
+        padding: 12px 8px;
+    }
+
+    .chcalc-submit {
+        padding: 0 16px;
+    }
+}
+
+/* ---------------- 英语单词 ---------------- */
+
+.chen-label {
+    margin: 0 0 4px;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    color: #c9a56b;
+}
+
+.chen-ask {
+    margin: 0 0 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #b6a08c;
+}
+
+.chen-q {
+    display: block;
+    margin: 8px 0 4px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+    color: #f6ecdd;
+    word-break: break-word;
+}
+
+.chen-q.is-zh {
+    font-family: inherit;
+    font-size: 30px;
+    letter-spacing: 0.08em;
+}
+
+.chen-blank {
+    margin-left: 6px;
+    color: #b08a58;
+    letter-spacing: 0.06em;
+}
+
+.chen-sub {
+    margin: 2px 0 14px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    color: #9c8875;
+}
+
+.chen-opts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.chen-opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 10px 12px;
+    border: 1px solid rgba(216, 176, 115, 0.24);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+    color: #e9d7c2;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.4;
+    text-align: left;
+    cursor: pointer;
+}
+
+.chen-opt:hover:not(:disabled) {
+    border-color: rgba(216, 176, 115, 0.68);
+    background: rgba(216, 176, 115, 0.08);
+}
+
+.chen-opt:focus-visible {
+    outline: 2px solid rgba(216, 176, 115, 0.7);
+    outline-offset: 2px;
+}
+
+.chen-opt:disabled {
+    cursor: default;
+}
+
+.chen-key {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border: 1px solid rgba(216, 176, 115, 0.28);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #c9a56b;
+}
+
+.chen-en {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+}
+
+.chen-opt.is-right {
+    border-color: rgba(157, 192, 139, 0.7);
+    background: rgba(157, 192, 139, 0.12);
+    color: #cfe0c2;
+}
+
+.chen-opt.is-right .chen-key {
+    border-color: rgba(157, 192, 139, 0.6);
+    color: #a9cd95;
+}
+
+.chen-opt.is-wrong {
+    border-color: rgba(180, 96, 76, 0.5);
+    color: #c08573;
+    opacity: 0.72;
+}
+
+.chen-result {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px dashed rgba(216, 176, 115, 0.28);
+    border-radius: 10px;
+    background: rgba(216, 176, 115, 0.05);
+}
+
+.chen-result-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: #9c8875;
+}
+
+.chen-result-word {
+    display: block;
+    margin-top: 4px;
+    font-size: 16px;
+    color: #ecd6b1;
+}
+
+.chen-result-meta {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #b6a08c;
+}
+
+.chen-count {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: #9c8875;
+}
+
+.chen-msg {
+    margin: 12px 0 0;
+    min-height: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #b6a08c;
+}
+
+.chen-msg.is-ok {
+    color: #9dc08b;
+}
+
+.chen-msg.is-bad {
+    color: #d08a78;
+}
+
+@media (max-width: 520px) {
+    .chen-opts {
+        grid-template-columns: 1fr;
+    }
+
+    .chen-q {
+        font-size: 30px;
+    }
+
+    .chen-q.is-zh {
+        font-size: 25px;
+    }
+}

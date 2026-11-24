@@ -1,0 +1,1306 @@
+/* ============================================================
+ * racing.css —— 霓虹狂飙 · NEON RUSH
+ * 深咖啡底色 + 琥珀金/青绿霓虹，和合集其他页面同一套语气
+ * ============================================================ */
+
+:root {
+    --bg: #080505;
+    --panel: #17100c;
+    --panel-2: #1f1610;
+    --line: #3b2a20;
+    --gold: #d8b073;
+    --gold-soft: #f0dcba;
+    --ink: #f4ead9;
+    --dim: #a8927c;
+    --amber: #ffb03a;
+    --amber-soft: #ffd48a;
+    --teal: #5fe0c0;
+    --red: #ff6b74;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(820px 560px at 8% -12%, rgba(255, 176, 58, 0.14), transparent 62%),
+        radial-gradient(1100px 700px at 100% 112%, rgba(120, 66, 34, 0.3), transparent 66%),
+        linear-gradient(165deg, #17100c 0%, #0b0706 48%, #050303 100%);
+    color: var(--ink);
+    font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 18px 16px;
+    overflow: hidden;
+}
+
+.page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+/* ---------------- 顶部 ---------------- */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(1200px, 96vw);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--dim);
+}
+
+.back-link {
+    color: var(--gold);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border: 1px solid rgba(216, 176, 115, 0.28);
+    border-radius: 999px;
+    background: rgba(216, 176, 115, 0.05);
+    transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.back-link:hover {
+    color: var(--gold-soft);
+    border-color: rgba(216, 176, 115, 0.55);
+    background: rgba(216, 176, 115, 0.1);
+}
+
+.brand {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.28em;
+    color: #8c7867;
+}
+
+/* ---------------- 游戏框 ---------------- */
+.frame {
+    position: relative;
+    width: min(1200px, 96vw, calc((100vh - 158px) * 16 / 9));
+    aspect-ratio: 16 / 9;
+    border: 1px solid rgba(216, 176, 115, 0.24);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0a0605;
+    box-shadow:
+        0 40px 90px -46px rgba(0, 0, 0, 0.95),
+        0 0 0 1px rgba(216, 176, 115, 0.06) inset,
+        0 0 60px -20px rgba(216, 176, 115, 0.18);
+    user-select: none;
+}
+
+.frame canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: grab;
+    transition: filter 0.35s ease;
+}
+
+.frame canvas.is-hit {
+    filter: saturate(1.4) brightness(1.08);
+}
+
+.scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.16) 0,
+        rgba(0, 0, 0, 0.16) 1px,
+        rgba(255, 255, 255, 0.02) 2px,
+        rgba(255, 255, 255, 0.02) 3px
+    );
+    opacity: 0.4;
+    mix-blend-mode: multiply;
+}
+
+/* ---------------- HUD ---------------- */
+.hud {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.hud.is-live {
+    opacity: 1;
+}
+
+.hud-tl {
+    position: absolute;
+    left: 22px;
+    top: 20px;
+}
+
+.score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.hud-label {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: rgba(216, 176, 115, 0.72);
+}
+
+.score-val {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 34px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--gold-soft);
+    text-shadow: 0 0 26px rgba(255, 176, 58, 0.45);
+}
+
+.sub-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 7px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: rgba(194, 173, 150, 0.86);
+}
+
+.sub-row .sep {
+    color: rgba(216, 176, 115, 0.35);
+}
+
+.combo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255, 176, 58, 0.4);
+    border-radius: 999px;
+    background: rgba(255, 176, 58, 0.1);
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    color: var(--amber-soft);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.combo-chip.is-on {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.combo-chip b {
+    color: #fff3d6;
+    font-size: 13px;
+}
+
+/* 关卡进度 */
+.hud-tc {
+    position: absolute;
+    left: 50%;
+    top: 18px;
+    transform: translateX(-50%);
+    width: 336px;
+    text-align: center;
+}
+
+.level-name {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.26em;
+    color: rgba(216, 176, 115, 0.78);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.level-bar {
+    position: relative;
+    height: 7px;
+    margin-top: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    overflow: hidden;
+}
+
+.level-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(255, 176, 58, 0.55), #ffd48a);
+    box-shadow: 0 0 16px rgba(255, 176, 58, 0.6);
+    transition: width 0.2s linear;
+}
+
+.level-mark {
+    position: absolute;
+    top: 50%;
+    width: 11px;
+    height: 11px;
+    margin-left: -5.5px;
+    margin-top: -5.5px;
+    border-radius: 50%;
+    background: #fff4dd;
+    box-shadow: 0 0 12px #ffb03a;
+    left: 0;
+}
+
+.level-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(194, 173, 150, 0.8);
+}
+
+/* 右上 */
+.hud-tr {
+    position: absolute;
+    right: 20px;
+    top: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hearts {
+    display: flex;
+    gap: 4px;
+    margin-right: 4px;
+}
+
+.heart {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    line-height: 1;
+    color: #ff8a92;
+    filter: drop-shadow(0 0 8px rgba(255, 107, 116, 0.55));
+    transition: transform 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.heart.is-off {
+    color: rgba(255, 255, 255, 0.18);
+    filter: none;
+    transform: scale(0.86);
+}
+
+.heart.is-lost {
+    animation: heartPop 0.45s ease;
+}
+
+@keyframes heartPop {
+    0% { transform: scale(1.4); }
+    60% { transform: scale(0.8); }
+    100% { transform: scale(0.86); }
+}
+
+.icon-btn {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(216, 176, 115, 0.24);
+    border-radius: 9px;
+    background: rgba(12, 8, 5, 0.5);
+    color: var(--gold);
+    font-size: 14px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.icon-btn:hover {
+    color: var(--gold-soft);
+    border-color: rgba(216, 176, 115, 0.6);
+    background: rgba(216, 176, 115, 0.12);
+}
+
+.icon-btn.is-muted {
+    color: rgba(168, 146, 124, 0.6);
+}
+
+/* 速度与氮气 */
+.hud-speed {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    width: 372px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px 11px;
+    border: 1px solid rgba(216, 176, 115, 0.22);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(28, 19, 13, 0.96), rgba(10, 6, 5, 0.97));
+    box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.9);
+}
+
+.speed-block {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 118px;
+}
+
+.speed-val {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 30px;
+    line-height: 1;
+    color: #fff8e8;
+    font-weight: 600;
+    text-shadow: 0 0 18px rgba(255, 176, 58, 0.45), 0 1px 2px rgba(0, 0, 0, 0.9);
+    font-variant-numeric: tabular-nums;
+}
+
+.speed-unit {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    color: rgba(216, 176, 115, 0.62);
+}
+
+.nitro-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.nitro-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    color: rgba(194, 173, 150, 0.8);
+    margin-bottom: 6px;
+}
+
+.nitro-head.is-ready {
+    color: var(--teal);
+}
+
+.nitro-bar {
+    position: relative;
+    height: 9px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+}
+
+.nitro-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0;
+    border-radius: 5px;
+    background: linear-gradient(90deg, rgba(95, 224, 192, 0.5), var(--teal));
+    box-shadow: 0 0 14px rgba(95, 224, 192, 0.55);
+    transition: width 0.12s linear;
+}
+
+.nitro-fill.is-burning {
+    background: linear-gradient(90deg, #ffb03a, #ffd48a);
+    box-shadow: 0 0 20px rgba(255, 176, 58, 0.75);
+}
+
+/* 漂移提示（画布内，由 JS 绘制，这里只留 DOM 备用） */
+.drift-tag {
+    position: absolute;
+    left: 50%;
+    bottom: 100px;
+    transform: translateX(-50%);
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    letter-spacing: 0.22em;
+    color: var(--amber-soft);
+    text-shadow: 0 0 18px rgba(255, 176, 58, 0.6);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.drift-tag.is-on {
+    opacity: 1;
+}
+
+/* ---------------- 遮罩与面板 ---------------- */
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: radial-gradient(120% 100% at 50% 0%, rgba(12, 8, 5, 0.74), rgba(5, 3, 3, 0.92));
+}
+
+/* 菜单层留出更多赛道画面，不要压成一片黑 */
+#menuOv {
+    background: radial-gradient(120% 100% at 50% 0%, rgba(12, 8, 5, 0.52), rgba(5, 3, 3, 0.86));
+}
+
+.overlay[hidden] {
+    display: none;
+}
+
+.panel {
+    width: min(560px, 92%);
+    padding: 26px 30px 24px;
+    border: 1px solid rgba(216, 176, 115, 0.26);
+    border-radius: 18px;
+    background:
+        radial-gradient(120% 90% at 50% -20%, rgba(255, 176, 58, 0.1), transparent 62%),
+        linear-gradient(180deg, rgba(31, 22, 16, 0.96), rgba(12, 8, 5, 0.98));
+    box-shadow:
+        0 30px 80px -30px rgba(0, 0, 0, 0.9),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.kicker {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: rgba(216, 176, 115, 0.68);
+}
+
+.game-title {
+    margin-top: 10px;
+    font-size: 42px;
+    letter-spacing: 0.1em;
+    line-height: 1.1;
+    color: var(--gold-soft);
+    text-shadow: 0 0 34px rgba(255, 176, 58, 0.3);
+}
+
+.lead {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(194, 173, 150, 0.92);
+}
+
+/* ---------------- 菜单面板 ---------------- */
+.menu-panel {
+    width: min(1120px, 95%);
+    max-height: 93%;
+    padding: 22px 26px 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.menu-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(216, 176, 115, 0.16);
+}
+
+.menu-head .game-title {
+    font-size: 34px;
+    margin-top: 6px;
+}
+
+.menu-head .lead {
+    margin: 0;
+    max-width: 420px;
+    font-size: 12px;
+    line-height: 1.65;
+    text-align: right;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: 0.82fr 1.1fr 1.02fr;
+    gap: 14px;
+    margin-top: 14px;
+    min-height: 0;
+    flex: 1;
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 12px 12px 10px;
+    border: 1px solid rgba(216, 176, 115, 0.14);
+    border-radius: 13px;
+    background: rgba(12, 8, 5, 0.42);
+}
+
+.col-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: rgba(216, 176, 115, 0.78);
+}
+
+.col-head em {
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: rgba(168, 146, 124, 0.6);
+}
+
+.col-body {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(216, 176, 115, 0.35) transparent;
+    padding-right: 2px;
+}
+
+/* 路面 */
+.surface-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.surface-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid rgba(216, 176, 115, 0.18);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.surface-btn:hover {
+    border-color: rgba(216, 176, 115, 0.45);
+    background: rgba(216, 176, 115, 0.08);
+}
+
+.surface-btn.is-on {
+    border-color: rgba(255, 176, 58, 0.8);
+    background: rgba(255, 176, 58, 0.12);
+    box-shadow: 0 0 0 1px rgba(255, 176, 58, 0.23) inset, 0 0 22px -8px rgba(255, 176, 58, 0.6);
+}
+
+.swatch {
+    position: relative;
+    height: 40px;
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.swatch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 14px, rgba(255, 255, 255, 0.14) 14px 26px),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.02) 46%, rgba(0, 0, 0, 0.3));
+    opacity: 0.8;
+}
+
+.sw-asphalt {
+    background: linear-gradient(180deg, #2a211a, #4a3826 60%, #2a211a);
+}
+
+.sw-sand {
+    background: linear-gradient(180deg, #6b4a2e, #a9814f 58%, #5a3c24);
+}
+
+.sw-snow {
+    background: linear-gradient(180deg, #4b5560, #97a9b5 58%, #3c4650);
+}
+
+.sw-metal {
+    background:
+        repeating-linear-gradient(90deg, rgba(95, 224, 192, 0.22) 0 2px, transparent 2px 26px),
+        linear-gradient(180deg, #1d1517, #3a2b2c 58%, #1d1517);
+}
+
+.surface-name {
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+}
+
+.surface-name i {
+    font-style: normal;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    margin-left: 4px;
+}
+
+.surface-meta {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: rgba(168, 146, 124, 0.9);
+}
+
+/* 车辆 */
+.car-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.car-btn {
+    position: relative;
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 9px;
+    border: 1px solid rgba(216, 176, 115, 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.car-btn:hover {
+    border-color: rgba(216, 176, 115, 0.45);
+    background: rgba(216, 176, 115, 0.08);
+}
+
+.car-btn.is-on {
+    border-color: rgba(95, 224, 192, 0.7);
+    background: rgba(95, 224, 192, 0.09);
+    box-shadow: 0 0 0 1px rgba(95, 224, 192, 0.2) inset;
+}
+
+.car-dot {
+    width: 32px;
+    height: 18px;
+    border-radius: 5px 5px 3px 3px;
+    box-shadow: 0 0 14px -2px currentColor;
+}
+
+.car-name {
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+}
+
+.car-name i {
+    font-style: normal;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(216, 176, 115, 0.14);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+}
+
+.car-tag {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: rgba(168, 146, 124, 0.85);
+}
+
+.car-stats {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 7px;
+    margin-top: 1px;
+}
+
+.stat-pill {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.stat-pill span {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    color: rgba(168, 146, 124, 0.8);
+}
+
+.stat-pill i {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-pill i b {
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: block;
+    border-radius: 2px;
+    background: linear-gradient(90deg, rgba(255, 176, 58, 0.55), var(--amber));
+}
+
+/* 关卡 */
+.level-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.level-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid rgba(216, 176, 115, 0.14);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.level-row:hover:not(:disabled) {
+    border-color: rgba(216, 176, 115, 0.45);
+    background: rgba(216, 176, 115, 0.08);
+}
+
+.level-row.is-on {
+    border-color: rgba(255, 176, 58, 0.75);
+    background: rgba(255, 176, 58, 0.1);
+}
+
+.level-row:disabled {
+    opacity: 0.44;
+    cursor: not-allowed;
+}
+
+.level-no {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    text-align: center;
+    border-right: 1px solid rgba(216, 176, 115, 0.2);
+    padding-right: 6px;
+}
+
+.level-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.level-info b {
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.level-info span {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: rgba(168, 146, 124, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.level-stars {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255, 176, 58, 0.9);
+    white-space: nowrap;
+}
+
+.level-stars .off {
+    color: rgba(216, 176, 115, 0.24);
+    font-size: 12px;
+}
+
+.level-stars .lock {
+    font-size: 12px;
+    letter-spacing: 0;
+    color: rgba(168, 146, 124, 0.65);
+}
+
+/* 菜单底部 */
+.menu-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px solid rgba(216, 176, 115, 0.16);
+}
+
+.menu-hint {
+    font-size: 11px;
+    line-height: 1.7;
+    color: rgba(168, 146, 124, 0.92);
+}
+
+.menu-hint b {
+    color: var(--gold);
+    font-weight: 500;
+}
+
+.menu-hint .keys-inline {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 0.04em;
+    color: rgba(216, 176, 115, 0.9);
+}
+
+.menu-foot-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.menu-best {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(168, 146, 124, 0.9);
+    text-align: right;
+}
+
+.menu-best b {
+    display: block;
+    margin-top: 3px;
+    font-size: 16px;
+    color: var(--gold-soft);
+    letter-spacing: 0.04em;
+}
+
+/* 按钮 */
+.cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 46px;
+    padding: 0 24px;
+    border: 1px solid rgba(255, 176, 58, 0.55);
+    border-radius: 11px;
+    background: linear-gradient(180deg, rgba(255, 176, 58, 0.22), rgba(255, 122, 26, 0.1));
+    color: #fff3d6;
+    font-size: 15px;
+    letter-spacing: 0.16em;
+    cursor: pointer;
+    box-shadow: 0 0 30px -12px rgba(255, 176, 58, 0.65);
+    transition: transform 0.18s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.cta:hover {
+    background: linear-gradient(180deg, rgba(255, 176, 58, 0.32), rgba(255, 122, 26, 0.16));
+    border-color: rgba(255, 196, 106, 0.8);
+}
+
+.cta:active {
+    transform: translateY(1px) scale(0.985);
+}
+
+.cta em {
+    font-style: normal;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: rgba(255, 228, 188, 0.65);
+}
+
+.cta.is-compact {
+    height: 40px;
+    padding: 0 18px;
+    font-size: 13.5px;
+}
+
+.ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 18px;
+    border: 1px solid rgba(216, 176, 115, 0.28);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--dim);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.ghost:hover {
+    color: var(--gold-soft);
+    border-color: rgba(216, 176, 115, 0.6);
+}
+
+/* ---------------- 暂停 / 结算 ---------------- */
+.small-panel {
+    width: min(430px, 88%);
+    text-align: center;
+}
+
+.small-title {
+    margin-top: 8px;
+    font-size: 24px;
+    letter-spacing: 0.08em;
+    color: var(--gold-soft);
+}
+
+.small-text {
+    margin-top: 8px;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: rgba(194, 173, 150, 0.9);
+}
+
+.small-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+/* 结算 */
+.result-panel {
+    width: min(620px, 94%);
+    text-align: center;
+    padding: 24px 30px 22px;
+}
+
+.result-kicker {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: rgba(216, 176, 115, 0.68);
+}
+
+.result-title {
+    margin-top: 6px;
+    font-size: 30px;
+    letter-spacing: 0.08em;
+    color: var(--gold-soft);
+}
+
+.stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0 4px;
+    font-size: 30px;
+    line-height: 1;
+}
+
+.stars span {
+    color: rgba(255, 255, 255, 0.14);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.stars span.on {
+    color: #ffc25a;
+    text-shadow: 0 0 24px rgba(255, 176, 58, 0.8);
+    animation: starIn 0.45s ease both;
+}
+
+.stars span.on:nth-child(2) { animation-delay: 0.12s; }
+.stars span.on:nth-child(3) { animation-delay: 0.24s; }
+
+@keyframes starIn {
+    0% { transform: scale(0.4); opacity: 0; }
+    70% { transform: scale(1.16); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.star-note {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    color: rgba(168, 146, 124, 0.85);
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 16px 0 6px;
+}
+
+.result-stats div {
+    padding: 9px 6px;
+    border: 1px solid rgba(216, 176, 115, 0.16);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.result-stats span {
+    display: block;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    color: rgba(168, 146, 124, 0.85);
+}
+
+.result-stats b {
+    display: block;
+    margin-top: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--gold-soft);
+}
+
+.result-record {
+    margin-top: 6px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--amber-soft);
+}
+
+.result-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.result-hint {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.65;
+    color: rgba(168, 146, 124, 0.9);
+}
+
+.result-hint b {
+    color: var(--gold);
+    font-weight: 500;
+}
+
+/* 冠军结算用 */
+.cup-panel {
+    width: min(640px, 94%);
+    text-align: center;
+}
+
+/* ---------------- 页脚 / 触屏 ---------------- */
+.footnote {
+    width: min(1200px, 96vw);
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(168, 146, 124, 0.82);
+    letter-spacing: 0.03em;
+    text-align: center;
+}
+
+.rotate-hint {
+    display: none;
+    font-size: 11px;
+    color: rgba(216, 176, 115, 0.8);
+}
+
+.touch-nitro {
+    position: absolute;
+    right: 16px;
+    bottom: 96px;
+    z-index: 3;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    border: 1px solid rgba(95, 224, 192, 0.5);
+    background: radial-gradient(circle at 50% 40%, rgba(95, 224, 192, 0.28), rgba(8, 5, 4, 0.72));
+    color: #d9fff6;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    display: none;
+    place-items: center;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 0 26px -6px rgba(95, 224, 192, 0.5);
+}
+
+.touch-nitro.is-ready {
+    animation: nitroPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes nitroPulse {
+    0%, 100% { box-shadow: 0 0 22px -6px rgba(95, 224, 192, 0.5); }
+    50% { box-shadow: 0 0 38px 0 rgba(95, 224, 192, 0.75); }
+}
+
+/* 触屏 / 小屏 */
+@media (hover: none) and (pointer: coarse) {
+    .touch-nitro {
+        display: grid;
+    }
+    .hud-speed {
+        width: 300px;
+        bottom: 14px;
+        left: 16px;
+        transform: none;
+    }
+    .footnote {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .menu-grid {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+    }
+    .col {
+        min-height: auto;
+    }
+    .menu-head .lead {
+        display: none;
+    }
+    .result-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+    .hud-tc {
+        width: 240px;
+    }
+    .hud-tl {
+        left: 14px;
+        top: 14px;
+    }
+    .score-val {
+        font-size: 26px;
+    }
+    .hud-speed {
+        width: 280px;
+    }
+    .speed-val {
+        font-size: 24px;
+    }
+}
+
+@media (max-height: 620px) and (orientation: landscape) {
+    .topbar,
+    .footnote {
+        display: none;
+    }
+    .frame {
+        width: min(1200px, 96vw, calc((100vh - 24px) * 16 / 9));
+    }
+}
+
+/* 低高度视口：压缩菜单留白，保证六关与四车都能一眼看全 */
+@media (max-height: 880px) {
+    .menu-panel {
+        padding: 15px 20px 13px;
+    }
+    .menu-head {
+        padding-bottom: 8px;
+    }
+    .menu-head .game-title {
+        font-size: 27px;
+        margin-top: 3px;
+    }
+    .menu-head .lead {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+    .menu-grid {
+        margin-top: 10px;
+        gap: 10px;
+    }
+    .col {
+        padding: 8px 9px 7px;
+    }
+    .col-head {
+        margin-bottom: 6px;
+    }
+    .surface-btn {
+        padding: 6px;
+        gap: 4px;
+    }
+    .swatch {
+        height: 30px;
+    }
+    .surface-meta {
+        font-size: 8px;
+    }
+    .car-list {
+        gap: 5px;
+    }
+    .car-btn {
+        padding: 6px 8px;
+        gap: 7px;
+    }
+    .car-dot {
+        height: 15px;
+        width: 28px;
+    }
+    .stat-pill span {
+        font-size: 8px;
+    }
+    .level-list {
+        gap: 4px;
+    }
+    .level-row {
+        padding: 5px 8px;
+        gap: 6px;
+    }
+    .level-info b {
+        font-size: 12.5px;
+    }
+    .level-info span {
+        font-size: 9px;
+    }
+    .menu-foot {
+        margin-top: 8px;
+        padding-top: 8px;
+    }
+}

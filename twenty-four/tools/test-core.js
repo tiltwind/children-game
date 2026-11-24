@@ -101,6 +101,17 @@ modes.forEach(function (mode) {
       detail = "没用分数：" + p.numbers;
       break;
     }
+    // 不需要分数的场景必须保证有整数解法，且参考答案走整数路线
+    if (!cfg.requireFraction && p.integerSolutionCount === 0) {
+      works = false;
+      detail = "只有分数解法：" + p.numbers;
+      break;
+    }
+    if (!cfg.requireFraction && p.allSolutions[0].hasFraction) {
+      works = false;
+      detail = "参考答案含分数中间结果：" + p.numbers;
+      break;
+    }
     if (cfg.deck) {
       // 每种点数最多 4 张
       var counts = {};
@@ -160,6 +171,19 @@ ok(!divZero.ok, "除以 0 会被拦下", divZero.error);
 var notUsed = TF24.checkExpression("(6+6)*(6-6)", [6, 6, 6, 6], 24);
 ok(!notUsed.ok, "结果为 0 会被拦下", notUsed.error);
 
+/* ---------------- 中间过程不许出现分数 ---------------- */
+section("中间过程不许出现分数");
+
+var fracBlocked = TF24.checkExpression("8/(3-8/3)", [3, 3, 8, 8], 24, { allowFraction: false });
+ok(!fracBlocked.ok, "allowFraction:false 时分数中间结果被拦下");
+ok(fracBlocked.error.indexOf("分数") >= 0, "拦下时说明原因", fracBlocked.error);
+
+var fracAllowed = TF24.checkExpression("8/(3-8/3)", [3, 3, 8, 8], 24, { allowFraction: true });
+ok(fracAllowed.ok, "allowFraction:true 时仍允许分数中间结果", fracAllowed.error);
+
+var intExpr = TF24.checkExpression("1*2*3*4", [1, 2, 3, 4], 24, { allowFraction: false });
+ok(intExpr.ok, "纯整数算式照常通过", intExpr.error);
+
 /* ---------------- 提示 ---------------- */
 section("提示");
 
@@ -167,6 +191,10 @@ var h1 = TF24.hint(fractions, 1);
 ok(!!h1.text && h1.text.indexOf("先算") >= 0, "一级提示给出第一步", h1.text);
 var h2 = TF24.hint(fractions, 2);
 ok(h2.text.indexOf("参考答案") >= 0, "二级提示给出完整答案", h2.text);
+
+var intPuzzle = TF24.generate({ mode: "classic", seed: "hint-int" });
+var hInt = TF24.hint(intPuzzle, 1);
+ok(hInt.text.indexOf("/") < 0 && hInt.text.indexOf("分数") < 0, "整数题的提示不出现分数", hInt.text);
 
 /* ---------------- 汇总 ---------------- */
 console.log("\n结果：" + pass + " 通过，" + fail + " 失败");

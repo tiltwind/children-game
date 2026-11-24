@@ -58,7 +58,7 @@
       if (PVZ.gate || !window.Gate) return;
       PVZ.gate = window.Gate.create({
         everyMinutes: 5,
-        challenges: ["twenty-four", "poem"],
+        challenges: ["twenty-four", "poem", "english"],
         showBadge: true,
         badgePosition: "raised",
         openOnStart: /[?&]tf24demo=1/.test(location.search),

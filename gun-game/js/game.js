@@ -194,7 +194,7 @@
     if (/[?&]nogate=1/.test(location.search)) return;
     game.gate = root.Gate.create({
       everyMinutes: 5,
-      challenges: ['twenty-four', 'poem'],
+      challenges: ['twenty-four', 'poem', 'english'],
       onLock: function () {
         game.paused.gate = true;
         UI.toast('门禁开启，解开通关后继续行动');

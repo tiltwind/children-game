@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语小勇士 · 拼读闯关</title>
+    <link rel="stylesheet" href="english.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a class="back-link" href="../index.html">← 返回首页</a>
+
+            <div class="brand">
+                <span class="logo" aria-hidden="true">Aa</span>
+                <div class="brand-copy">
+                    <p class="eyebrow">Word Quest · 拼读闯关</p>
+                    <h1>英语小勇士</h1>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" title="开关音效">🔊</button>
+                <button class="ghost-btn" id="lexBtn" type="button">单词表</button>
+            </div>
+        </header>
+
+        <main class="main">
+            <!-- ===== 视图：关卡地图 ===== -->
+            <section class="view" id="homeView">
+                <div class="hero">
+                    <div class="hero-copy">
+                        <p class="hero-kicker">小学 1–3 年级 · <b id="wordCount">328</b> 个单词</p>
+                        <h2>十道题，闯一关</h2>
+                        <p class="hero-desc">英翻中、中翻英、补全单词，八道关卡由易到难。每关 10 题，第一次就答对 8 题，下一关自动解锁。</p>
+                        <div class="hero-actions">
+                            <button class="primary-btn" id="continueBtn" type="button">继续闯关</button>
+                            <button class="ghost-btn" id="practiceBtn" type="button">自由练习</button>
+                        </div>
+                    </div>
+                    <div class="hero-badge" aria-hidden="true">
+                        <span class="block block-a">A</span>
+                        <span class="block block-b">B</span>
+                        <span class="block block-c">C</span>
+                        <span class="block-note">apple<br>banana<br>cat</span>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat"><span>已通关</span><strong><b id="statLevels">0</b> / 8</strong></div>
+                    <div class="stat"><span>小星星</span><strong><b id="statStars">0</b> / 24</strong></div>
+                    <div class="stat"><span>单词库</span><strong><b id="statWords">328</b> 词</strong></div>
+                </div>
+
+                <div class="section-head">
+                    <h3>关卡地图</h3>
+                    <span class="section-note">越往后，单词越长、题型越难</span>
+                </div>
+                <div class="level-grid" id="levelGrid"></div>
+
+                <p class="page-tip"><span aria-hidden="true">🦉</span> 猫头鹰老师说：先听发音，再按音节拼一拼，最后选出答案。每题只有一次机会，答错会马上公布答案和拼读，下一题接着来。</p>
+            </section>
+
+            <!-- ===== 视图：答题 ===== -->
+            <section class="view" id="quizView" hidden>
+                <div class="quiz-head">
+                    <button class="link-btn" id="quitBtn" type="button">← 退出</button>
+                    <div class="quiz-heading">
+                        <span class="quiz-level" id="quizLevel">第 1 关</span>
+                        <span class="quiz-mode" id="quizMode">闯关</span>
+                    </div>
+                    <div class="quiz-count"><b id="qIndex">1</b><span>/</span><span id="qTotal">10</span></div>
+                </div>
+
+                <div class="progress" aria-hidden="true"><span class="progress-fill" id="progressFill"></span></div>
+
+                <div class="scoreline">
+                    <span>第一次答对 <b id="qScore">0</b> 题</span>
+                    <span id="qStreak">连对 0</span>
+                    <span id="qPracticeCount" hidden>已答 0 题</span>
+                </div>
+
+                <div class="quiz-card" id="quizCard">
+                    <div class="quiz-topline">
+                        <span class="type-chip" id="qType">英翻中</span>
+                        <span class="grade-chip" id="qGrade">一年级</span>
+                    </div>
+
+                    <p class="ask" id="qAsk">这个单词是什么意思？</p>
+                    <div class="prompt" id="qPrompt">apple</div>
+                    <p class="prompt-sub" id="qSub">/ˈæpl/ · ap-ple</p>
+                    <button class="speak-inline" id="speakBtn" type="button" hidden>🔊 听发音</button>
+
+                    <div class="options" id="optionsBox" role="group" aria-label="选择答案"></div>
+
+                    <div class="write-box" id="writeBox" hidden>
+                        <label class="sr-only" for="answerInput">写出答案</label>
+                        <input class="answer-input" id="answerInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="在这里拼写">
+                        <button class="primary-btn submit-btn" id="submitBtn" type="button">提交</button>
+                    </div>
+
+                    <p class="hint-line" id="hintLine" hidden></p>
+                    <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+                    <div class="quiz-actions">
+                        <button class="ghost-btn" id="hintBtn" type="button">给点提示</button>
+                        <button class="primary-btn" id="nextBtn" type="button" hidden>下一题 →</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== 视图：结算 ===== -->
+            <section class="view" id="resultView" hidden>
+                <div class="result-card">
+                    <div class="result-stars" id="resultStars" aria-hidden="true"></div>
+                    <p class="result-kicker" id="resultKicker">第 1 关 · 完成</p>
+                    <h2 class="result-title" id="resultTitle">闯关成功</h2>
+                    <p class="result-text" id="resultText"></p>
+
+                    <div class="result-metrics">
+                        <div><span>第一次答对</span><b id="resultScore">8 / 10</b></div>
+                        <div><span>用时</span><b id="resultTime">2 分 10 秒</b></div>
+                        <div><span>正确率</span><b id="resultRate">80%</b></div>
+                    </div>
+
+                    <div class="wrong-box" id="wrongBox" hidden>
+                        <h3>这几题再看一眼</h3>
+                        <ul id="wrongList"></ul>
+                    </div>
+
+                    <div class="result-actions">
+                        <button class="primary-btn" id="nextLevelBtn" type="button">下一关 →</button>
+                        <button class="ghost-btn" id="retryBtn" type="button">再玩一次</button>
+                        <button class="ghost-btn" id="resultHomeBtn" type="button">返回关卡</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== 视图：单词表 ===== -->
+            <section class="view" id="lexView" hidden>
+                <div class="lex-head">
+                    <div>
+                        <p class="hero-kicker">Word Bank · 拼读词库</p>
+                        <h2>全部单词</h2>
+                    </div>
+                    <button class="ghost-btn" id="lexBackBtn" type="button">返回关卡</button>
+                </div>
+
+                <div class="lex-tools">
+                    <div class="lex-tabs" id="lexTabs" role="group" aria-label="按年级筛选">
+                        <button class="tab is-active" type="button" data-grade="all">全部</button>
+                        <button class="tab" type="button" data-grade="1">一年级</button>
+                        <button class="tab" type="button" data-grade="2">二年级</button>
+                        <button class="tab" type="button" data-grade="3">三年级</button>
+                    </div>
+                    <input class="lex-search" id="lexSearch" type="search" placeholder="搜单词或中文，例如 apple / 苹果" autocomplete="off">
+                </div>
+
+                <p class="lex-count" id="lexCount">共 328 个单词</p>
+                <div class="lex-list" id="lexList"></div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>小学 1–3 年级 · 328 个单词 · 5 种题型</span>
+            <span>SHUTU GAME · 英语小勇士</span>
+        </footer>
+    </div>
+
+    <!-- ===== 自由练习设置 ===== -->
+    <div class="practice-modal" id="practiceModal" hidden>
+        <div class="practice-card" role="dialog" aria-modal="true" aria-labelledby="practiceTitle">
+            <p class="hero-kicker">Free Practice</p>
+            <h3 id="practiceTitle">自由练习</h3>
+            <p class="practice-note">10 题一轮，不计入闯关进度。</p>
+
+            <div class="practice-group">
+                <label>年级</label>
+                <div class="chip-row" id="practiceGrades">
+                    <button class="tab is-active" type="button" data-value="all">全部</button>
+                    <button class="tab" type="button" data-value="1">一年级</button>
+                    <button class="tab" type="button" data-value="2">二年级</button>
+                    <button class="tab" type="button" data-value="3">三年级</button>
+                </div>
+            </div>
+
+            <div class="practice-group">
+                <label>题型</label>
+                <div class="chip-row" id="practiceTypes">
+                    <button class="tab is-active" type="button" data-value="mix">混合</button>
+                    <button class="tab" type="button" data-value="choice">选择题</button>
+                    <button class="tab" type="button" data-value="write">手写拼写</button>
+                    <button class="tab" type="button" data-value="fill">补全单词</button>
+                </div>
+            </div>
+
+            <div class="practice-actions">
+                <button class="primary-btn" id="practiceStart" type="button">开始练习</button>
+                <button class="ghost-btn" id="practiceCancel" type="button">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="english-data.js"></script>
+    <script src="../limit/limit.js" data-game="english"></script>
+    <script src="english.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

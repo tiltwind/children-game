@@ -10,12 +10,14 @@
   var Gate = global.Gate;
   if (!TF24 || !Board || !Gate) throw new Error("twenty-four.js 需要先加载 core.js、board.js、gate.js");
 
-  // 通过次数越多，题目越难：经典 → 进阶 → 高手
-  var LADDER = ["classic", "classic", "hard", "hard", "expert", "expert"];
+  // 通过次数越多，题目越难：经典 → 进阶。
+  // 门禁是给小学生用的，绝不出「必须用分数」的题，最高停在进阶。
+  var LADDER = ["classic", "classic", "hard", "hard", "hard"];
 
   function modeFor(api) {
     var mode = (api.options && api.options.mode) || "auto";
     if (mode === "auto") mode = LADDER[Math.min(api.passed, LADDER.length - 1)];
+    if (mode === "expert") mode = "hard"; // 分数题不进校门禁，显式配置也降级
     return TF24.MODES[mode] ? mode : "classic";
   }
 

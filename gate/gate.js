@@ -61,6 +61,28 @@
     return m + ":" + (s < 10 ? "0" + s : s);
   }
 
+  /* ============================================================
+   * 持久化：计时进度 + 未通过的门禁状态
+   *
+   * 存在 localStorage，按「游戏」分键（默认用页面路径），所以：
+   *   - 刷新 / 关标签 / 隔天再来，累计游玩时间不会清零；
+   *   - 门禁已弹出但没答对就刷新，重新进入页面会立刻再次弹出同一道关卡，
+   *     只有答对才放行 —— 刷新不能绕过门禁。
+   * ============================================================ */
+
+  var DEFAULT_STORE_KEY = "shutu.gate.v1";
+
+  function storageAvailable() {
+    try {
+      var probe = "__shutu_gate_probe__";
+      global.localStorage.setItem(probe, "1");
+      global.localStorage.removeItem(probe);
+      return true;
+    } catch (e) {
+      return false; // 隐私模式 / 禁用存储时退化为内存计时
+    }
+  }
+
   function Gate(options) {
     options = options || {};
 
@@ -84,6 +106,9 @@
       autoTick: options.autoTick === true,
       allowSkip: options.allowSkip === true,
       unlockDelay: options.unlockDelay || 1000,
+      storage: options.storage !== false,
+      storageKey: options.storageKey || DEFAULT_STORE_KEY,
+      game: options.game || null,
       random: typeof options.random === "function" ? options.random : Math.random,
       onLock: options.onLock || null,
       onUnlock: options.onUnlock || null,
@@ -113,21 +138,43 @@
     this.challengeId = null;
     this._passing = false;
     this._lastChallenge = null;
+    this._resumeChallenge = null;
     this._lastBadge = "";
     this._openedAt = 0;
     this._timer = null;
     this._autoTimer = null;
     this._lastTick = 0;
+    this._lastSave = 0;
+    this._unsaved = 0;
+
+    // 存档：按页面（或 options.game）分键
+    this.storeKey = this.options.storageKey;
+    this.gameId = this.options.game || (function () {
+      var path = (global.location && global.location.pathname) || "";
+      path = path.replace(/[?#].*$/, "");
+      return path || "default";
+    })();
+    this._storeEnabled = this.options.storage && storageAvailable();
+    this._pending = this._loadState();
 
     this._buildBadge();
     this._buildOverlay();
     this._updateBadge(true);
+    this._bindFlush();
 
     if (this.options.autoTick) {
       var self = this;
       this._autoTimer = setInterval(function () {
         if (Date.now() - self._lastTick > 1500) self.tick(1);
       }, 1000);
+    }
+
+    // 上次没答对就离开：立刻把门禁重新立起来，刷新不能绕过
+    if (this._pending) {
+      var resumeSelf = this;
+      setTimeout(function () {
+        resumeSelf.open("resume");
+      }, 0);
     }
 
     // 调试：openOnStart 或 ?tf24demo=1 时立即弹题
@@ -138,6 +185,121 @@
       }, 0);
     }
   }
+
+  /* ---------------- 存档读写 ---------------- */
+
+  Gate.prototype._readStore = function () {
+    var all = { v: 1, games: {} };
+    if (!this._storeEnabled) return all;
+    try {
+      var raw = global.localStorage.getItem(this.storeKey);
+      var parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && parsed.games && typeof parsed.games === "object") {
+        return parsed;
+      }
+    } catch (e) {
+      /* 存档损坏就当成没有，不影响游戏 */
+    }
+    return all;
+  };
+
+  // 返回 true 表示「上次门禁没通过」，需要立刻重新弹出
+  Gate.prototype._loadState = function () {
+    if (!this._storeEnabled) return false;
+    var all = this._readStore();
+
+    // 全局待通过：在别的游戏里没答对就跳过来，这里也要先过同一关
+    var gp = all.pending;
+    if (gp && typeof gp.game === "string" && gp.game !== this.gameId) {
+      if (typeof gp.challenge === "string" && registry[gp.challenge]) {
+        this._resumeChallenge = gp.challenge;
+      }
+      return true;
+    }
+
+    var st = all.games[this.gameId];
+    if (!st) return false;
+
+    var seconds = Number(st.seconds);
+    if (seconds > 0 && seconds < 1e6) this.seconds = seconds;
+    if (this.seconds > this.everySeconds) this.seconds = this.everySeconds;
+
+    var passed = Math.floor(Number(st.passed) || 0);
+    if (passed > 0) this.passed = passed;
+    var opens = Math.floor(Number(st.opens) || 0);
+    if (opens > 0) this.opens = opens;
+
+    // 记录上一次的题型，避免回答中途刷新就换了题
+    if (typeof st.challenge === "string" && registry[st.challenge]) {
+      this._resumeChallenge = st.challenge;
+    }
+    return st.pending === true;
+  };
+
+  Gate.prototype._saveState = function () {
+    if (!this._storeEnabled) return;
+    var all = this._readStore();
+    all.v = 1;
+    var st = all.games[this.gameId] || {};
+    st.seconds = Math.round(this.seconds * 10) / 10;
+    st.passed = this.passed;
+    st.opens = this.opens;
+    // 门禁开着且还没答对 => 待通过，刷新 / 换页面都躲不掉
+    st.pending = this.locked && !this._passing;
+    st.challenge = this.challengeId || st.challenge || null;
+    st.at = Date.now();
+    all.games[this.gameId] = st;
+
+    if (st.pending) {
+      // 记一条全局待通过，其它游戏页读到也会拦
+      all.pending = { game: this.gameId, challenge: st.challenge, at: st.at };
+    } else if (all.pending) {
+      // 这次已经答对：全站的待通过一起清掉，避免在别的页面被二次拦下
+      delete all.pending;
+      var ids = Object.keys(all.games);
+      for (var i = 0; i < ids.length; i++) {
+        if (all.games[ids[i]] && all.games[ids[i]].pending) all.games[ids[i]].pending = false;
+      }
+    }
+
+    try {
+      global.localStorage.setItem(this.storeKey, JSON.stringify(all));
+      this._lastSave = Date.now();
+      this._unsaved = 0;
+    } catch (e) {
+      /* 写失败就下次再写 */
+    }
+  };
+
+  // 页面离开 / 切后台时把进度落盘
+  Gate.prototype._bindFlush = function () {
+    if (!this._storeEnabled) return;
+    var self = this;
+    this._flush = function () {
+      self._saveState();
+    };
+    global.addEventListener("pagehide", this._flush);
+    global.addEventListener("beforeunload", this._flush);
+    this._visibilityHandler = function () {
+      if (document.hidden) self._saveState();
+    };
+    document.addEventListener("visibilitychange", this._visibilityHandler);
+  };
+
+  // 清掉本局存下的进度与待通过状态（调试 / 重置用）
+  Gate.prototype.clearState = function () {
+    this.seconds = 0;
+    this.passed = 0;
+    this.opens = 0;
+    if (!this._storeEnabled) return;
+    try {
+      var all = this._readStore();
+      delete all.games[this.gameId];
+      global.localStorage.setItem(this.storeKey, JSON.stringify(all));
+    } catch (e) {
+      /* ignore */
+    }
+  };
 
   /* ---------------- 题型选择 ---------------- */
 
@@ -273,6 +435,7 @@
     this.noteEl.textContent =
       this.options.note ||
       "已经玩了 " + this.options.everyMinutes + " 分钟。完成这道题，再继续。";
+    this._defaultNote = this.noteEl.textContent;
 
     var self = this;
     this.skipBtn.hidden = !this.options.allowSkip;
@@ -432,8 +595,24 @@
 
     this.overlay.hidden = false;
     document.body.classList.add("gate-locked");
-    this._safeMount();
+
+    // 接着刷新前没答完的那道题继续
+    var resumed = reason === "resume" ? this._resumeChallenge : null;
+    var mounted = this._safeMount(resumed);
+    // 题型加载失败时换一个再试，别把人永久关在门外
+    if (!mounted && this.ids.length > 1) {
+      for (var i = 0; i < this.ids.length; i++) {
+        if (this.ids[i] === this.challengeId) continue;
+        if (this._safeMount(this.ids[i])) break;
+      }
+    }
+    this._resumeChallenge = null;
+    this.noteEl.textContent = reason === "resume"
+      ? "上一道题还没答对，先把它做完才能继续。"
+      : this._defaultNote;
+
     this._updateMeta();
+    this._saveState();
 
     var self = this;
     requestAnimationFrame(function () {
@@ -494,6 +673,7 @@
 
     var self = this;
     clearTimeout(this._closeTimer);
+    this._saveState(); // 已通过：pending 落成 false，刷新后不再弹
     this._closeTimer = setTimeout(function () {
       self.close();
     }, this.options.unlockDelay);
@@ -520,6 +700,7 @@
 
     this.seconds = 0;
     this._updateBadge(true);
+    this._saveState(); // 重新开始 5 分钟计时，同时把待通过状态清掉
 
     if (this.options.onUnlock) this.options.onUnlock();
     document.dispatchEvent(new CustomEvent("gate:unlock"));
@@ -536,7 +717,12 @@
     if (!(dt > 0)) return;
     if (dt > 2) dt = 2; // 从暂停恢复时不要一次跳完
     this.seconds += dt;
+    this._unsaved += dt;
     this._updateBadge(false);
+    // 累计 2 秒或距上次落盘 2 秒写一次，避免每帧写 localStorage
+    if (this._unsaved >= 2 || !this._lastSave || Date.now() - this._lastSave > 2000) {
+      this._saveState();
+    }
     if (this.seconds >= this.everySeconds) {
       this.open("timer");
     }
@@ -564,17 +750,29 @@
       passed: this.passed,
       opens: this.opens,
       locked: this.locked,
+      pending: this.locked && !this._passing,
       everyMinutes: this.options.everyMinutes,
       challenge: this.challengeId,
-      available: this.ids.slice()
+      available: this.ids.slice(),
+      game: this.gameId,
+      storage: this._storeEnabled
     };
   };
 
   Gate.prototype.destroy = function () {
     this.destroyed = true;
+    // 退出时把当前进度（以及「还锁着」的状态）落盘
+    this._saveState();
     clearInterval(this._timer);
     clearInterval(this._autoTimer);
     clearTimeout(this._closeTimer);
+    if (this._flush) {
+      global.removeEventListener("pagehide", this._flush);
+      global.removeEventListener("beforeunload", this._flush);
+    }
+    if (this._visibilityHandler) {
+      document.removeEventListener("visibilitychange", this._visibilityHandler);
+    }
     this._destroyChallenge();
     if (this.overlay) this.overlay.remove();
     if (this.badge) this.badge.remove();
@@ -593,13 +791,25 @@
     return new Gate(options);
   }
 
+  // 整体清空门禁存档（比如家长想重置所有游戏的计时）
+  function clearStore() {
+    try {
+      global.localStorage.removeItem(DEFAULT_STORE_KEY);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   global.Gate = {
     create: create,
     register: register,
     get: get,
     list: list,
     Gate: Gate,
-    fmtClock: fmtClock
+    fmtClock: fmtClock,
+    clearStore: clearStore,
+    storageKey: DEFAULT_STORE_KEY
   };
 
   // 兼容旧调用：TF24Gate === Gate

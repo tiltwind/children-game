@@ -119,6 +119,19 @@
     return fDiv(a, b);
   }
 
+  // 找出算式树里出现分数中间结果的步骤（叶子不算）
+  function fractionalSteps(tree) {
+    var out = [];
+    (function walk(t) {
+      if (!t || t.num !== undefined) return;
+      walk(t.a);
+      walk(t.b);
+      var v = evalTree(t);
+      if (v && v.d !== 1) out.push({ text: formatTree(t), value: v });
+    })(tree);
+    return out;
+  }
+
   /* ---------------- 求解 ---------------- */
 
   function normalizeOps(ops) {
@@ -345,7 +358,9 @@
       return !s.hasFraction;
     });
 
+    // 有整数解法时优先排在前面：提示与参考答案默认给整数路线
     var ordered = solutions.slice().sort(function (a, b) {
+      if (a.hasFraction !== b.hasFraction) return a.hasFraction ? 1 : -1;
       return a.expr.length - b.expr.length;
     });
 
@@ -434,20 +449,22 @@
     classic: {
       key: "classic",
       name: "经典",
-      desc: "1–13 的数字，四则运算，至少两种解法。",
+      desc: "1–13 的数字，四则运算，至少两种解法，保证有整数解法。",
       range: [1, 13],
       ops: "+-*/",
       minSolutions: 2,
+      integerOnly: true,
       desired: 3,
       deck: false
     },
     hard: {
       key: "hard",
       name: "进阶",
-      desc: "1–13 的数字，唯一解法，需要多绕一步。",
+      desc: "1–13 的数字，唯一解法，需要多绕一步，保证有整数解法。",
       range: [1, 13],
       ops: "+-*/",
       maxSolutions: 1,
+      integerOnly: true,
       desired: 4,
       deck: false
     },
@@ -475,10 +492,11 @@
     cards: {
       key: "cards",
       name: "扑克牌",
-      desc: "从一副 52 张牌里抽四张，1 代表 A，11–13 代表 J/Q/K。",
+      desc: "从一副 52 张牌里抽四张，1 代表 A，11–13 代表 J/Q/K，保证有整数解法。",
       range: [1, 13],
       ops: "+-*/",
       minSolutions: 1,
+      integerOnly: true,
       desired: 3,
       deck: true
     }
@@ -507,6 +525,8 @@
 
   /**
    * 出题
+   * 规则：只有显式 requireFraction（高手模式）才允许出「必须用分数」的题；
+   *       其余场景一律保证存在纯整数加减乘除的解法。
    * @param {object} opts
    *   mode: intro/classic/hard/expert/noDiv/cards，或省略交给随机
    *   numbers: 直接指定四个数（会覆盖随机）
@@ -530,12 +550,15 @@
       return fixed;
     }
 
+    // 不需要分数的场景（除显式 requireFraction 外）都必须有整数解法
+    var needInteger = !cfg.requireFraction;
+
     var candidates = [];
     var steps = 0;
     var limits = {
       minSolutions: cfg.minSolutions,
       maxSolutions: cfg.maxSolutions,
-      needInteger: cfg.integerOnly,
+      needInteger: needInteger,
       forbidInteger: cfg.requireFraction
     };
 
@@ -549,14 +572,14 @@
       if (cfg.minSolutions && scan.count < cfg.minSolutions) continue;
       if (cfg.maxSolutions && scan.count > cfg.maxSolutions) continue;
       if (cfg.requireFraction && scan.stopped === "hasInteger") continue;
-      if (cfg.integerOnly && scan.intCount === 0) continue;
+      if (needInteger && scan.intCount === 0) continue;
 
       var info = analyze(nums, target, cfg.ops);
       if (!info.solvable) continue;
       if (cfg.minSolutions && info.solutionCount < cfg.minSolutions) continue;
       if (cfg.maxSolutions && info.solutionCount > cfg.maxSolutions) continue;
       if (cfg.requireFraction && !info.requiresFraction) continue;
-      if (cfg.integerOnly && info.integerSolutionCount === 0) continue;
+      if (needInteger && info.integerSolutionCount === 0) continue;
 
       info.mode = cfg.key;
       info.modeName = cfg.name;
@@ -564,31 +587,44 @@
       info.steps = steps;
       candidates.push(info);
 
-      // 找到贴合目标难度的题就提前收手
-      if (
-        candidates.length >= 8 &&
-        Math.abs(candidates[candidates.length - 1].difficulty - cfg.desired) <= 0.5
-      ) {
-        break;
+      // 找到足够贴合目标难度的题就提前收手（留 1 级容差，避免唯一解模式空转）
+      if (candidates.length >= 8) {
+        var closestGap = Infinity;
+        for (var ci = 0; ci < candidates.length; ci++) {
+          var g = Math.abs(candidates[ci].difficulty - cfg.desired);
+          if (g < closestGap) closestGap = g;
+        }
+        if (closestGap <= 1) break;
       }
     }
 
     if (!candidates.length) {
-      // 放宽约束兜底：只保证有解
-      for (var guard = 0; guard < 2000; guard++) {
+      // 放宽解法数量与难度，但「要不要分数」是硬约束，不能放宽
+      for (var guard = 0; guard < 4000; guard++) {
         var fallbackNums = randomNumbers({ range: [1, 13], deck: false }, rng);
         var quick = scanSolutions(fallbackNums, target, cfg.ops, { firstOnly: true });
-        if (quick.count > 0) {
-          var fallbackInfo = analyze(fallbackNums, target, cfg.ops);
-          fallbackInfo.mode = cfg.key;
-          fallbackInfo.modeName = cfg.name;
-          fallbackInfo.seed = seed;
-          fallbackInfo.relaxed = true;
-          return fallbackInfo;
-        }
+        if (!quick.count) continue;
+        var fallbackInfo = analyze(fallbackNums, target, cfg.ops);
+        if (cfg.requireFraction && !fallbackInfo.requiresFraction) continue;
+        if (needInteger && fallbackInfo.integerSolutionCount === 0) continue;
+        fallbackInfo.mode = cfg.key;
+        fallbackInfo.modeName = cfg.name;
+        fallbackInfo.seed = seed;
+        fallbackInfo.relaxed = true;
+        return fallbackInfo;
       }
-      // 极端情况：返回一个固定的有解题目
-      var lastResort = analyze([3, 3, 8, 8], target, cfg.ops);
+      // 极端情况：按「要不要分数」挑一道固定的兜底题
+      var pool = cfg.requireFraction
+        ? [[3, 3, 8, 8], [1, 3, 4, 6], [1, 4, 5, 6]]
+        : [[6, 6, 6, 6], [1, 2, 3, 4], [3, 3, 3, 3]];
+      var lastResort = analyze(pool[0], target, cfg.ops);
+      for (var pi = 1; pi < pool.length; pi++) {
+        var tryInfo = analyze(pool[pi], target, cfg.ops);
+        if (needInteger && tryInfo.integerSolutionCount === 0) continue;
+        if (cfg.requireFraction && !tryInfo.requiresFraction) continue;
+        lastResort = tryInfo;
+        break;
+      }
       lastResort.mode = cfg.key;
       lastResort.modeName = cfg.name;
       lastResort.seed = seed;
@@ -706,9 +742,11 @@
 
   /**
    * 校验用户输入的算式
+   * @param opts {allowFraction:boolean} 传 false 时，中间过程出现分数直接判错
    * @returns {ok:true, value, valueText, expression} 或 {ok:false, error}
    */
-  function checkExpression(input, numbers, target) {
+  function checkExpression(input, numbers, target, opts) {
+    opts = opts || {};
     target = target || DEFAULT_TARGET;
     var text = normalizeExpr(input);
     if (!text) return { ok: false, error: "先写一个算式" };
@@ -753,6 +791,21 @@
         value: valueNum,
         valueText: fText(value)
       };
+    }
+
+    // 不需要分数的题：中间任何一步都不能是分数
+    if (opts.allowFraction === false) {
+      var steps = fractionalSteps(parsed.tree);
+      if (steps.length) {
+        return {
+          ok: false,
+          error:
+            "中间过程不能出现分数（" + steps[0].text + " = " + fText(steps[0].value) +
+            "），只能用整数的加、减、乘、除。",
+          value: valueNum,
+          valueText: fText(value)
+        };
+      }
     }
 
     return {

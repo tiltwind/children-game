@@ -846,7 +846,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!window.Gate) return;
         gate = window.Gate.create({
             everyMinutes: 5,
-            challenges: ['twenty-four', 'poem'],
+            challenges: ['twenty-four', 'poem', 'english'],
             // 触屏上徽标会压住底部触控键，交给门禁弹层本身提示即可
             showBadge: !isTouchDevice(),
             badgePosition: 'bottom-left',

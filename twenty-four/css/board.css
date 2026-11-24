@@ -107,6 +107,23 @@
     color: rgba(182, 160, 140, 0.6);
 }
 
+/* 必须用分数的题：常驻一条说明，避免玩家以为「除不尽就是错」 */
+.tf24-board .tf24-frac-note {
+    align-self: flex-start;
+    padding: 6px 14px;
+    border: 1px solid rgba(216, 176, 115, 0.42);
+    border-radius: 999px;
+    background: rgba(216, 176, 115, 0.1);
+    color: var(--tf24-hint);
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+}
+
+.tf24-board .tf24-frac-note[hidden] {
+    display: none;
+}
+
 .tf24-board .tf24-ops {
     display: flex;
     align-items: center;
@@ -131,6 +148,27 @@
 .tf24-board .tf24-op:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+/* 这一对牌除不尽：÷ 明确置灰 + 虚线边，按钮上直接说明「不能做」 */
+.tf24-board .tf24-op[data-blocked="1"] {
+    opacity: 0.26;
+    border-style: dashed;
+    border-color: rgba(217, 138, 112, 0.55);
+    color: var(--tf24-bad);
+    cursor: not-allowed;
+}
+
+/* 硬要按（键盘 /）时抖一下，配合状态栏提示 */
+.tf24-board .tf24-op.is-shake {
+    animation: tf24-shake 0.4s ease;
+}
+
+@keyframes tf24-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    55% { transform: translateX(5px); }
+    80% { transform: translateX(-3px); }
 }
 
 .tf24-board .tf24-op:not(:disabled):hover {
@@ -216,5 +254,9 @@
     .tf24-board .tf24-tile,
     .tf24-board .tf24-op {
         transition: none;
+    }
+
+    .tf24-board .tf24-op.is-shake {
+        animation: none;
     }
 }

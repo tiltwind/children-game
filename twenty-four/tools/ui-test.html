@@ -17,6 +17,7 @@
 <script src="../js/core.js"></script>
 <script src="../js/board.js"></script>
 <script src="../../gate/gate.js"></script>
+<script src="../../poem/poem-data.js"></script>
 <script src="../../gate/challenges/twenty-four.js"></script>
 <script src="../../gate/challenges/poem.js"></script>
 <script>
@@ -76,13 +77,26 @@ ok(board3.message.text.indexOf("自动") >= 0, "提示说明已自动调整", bo
 board3.load(TF24.analyze([2, 3, 8, 12], 24));
 board3.tilesEl.children[1].click(); // 3
 board3.tilesEl.children[2].click(); // 8
+var opSlash = board3.root.querySelector('[data-op="/"]');
+ok(opSlash.disabled, "除不尽的这一对，÷ 按钮直接禁用");
+ok(opSlash.getAttribute("data-blocked") === "1", "÷ 按钮被标记为不可操作", opSlash.getAttribute("data-blocked"));
+ok((opSlash.getAttribute("title") || "").indexOf("除不尽") >= 0, "÷ 按钮上写明原因", opSlash.getAttribute("title"));
+
 board3.root.querySelector('[data-op="/"]').click();
 ok(board3.tiles.length === 4, "除不尽时不合并");
-ok(board3.message.text.indexOf("除不尽") >= 0, "除不尽时给出换牌提示", board3.message.text);
+ok(board3.message.text.indexOf("除不尽") >= 0, "选中时就提示除不尽", board3.message.text);
+
+board3.root.dispatchEvent(new KeyboardEvent("keydown", { key: "/", bubbles: true }));
+ok(
+  board3.tiles.length === 4 && board3.message.text.indexOf("不能做") >= 0,
+  "键盘按 ÷ 也被拦下并提示不能做",
+  board3.message.text
+);
 
 board3.load(TF24.analyze([2, 3, 8, 12], 24));
 board3.tilesEl.children[0].click(); // 2
 board3.tilesEl.children[2].click(); // 8
+ok(!board3.root.querySelector('[data-op="/"]').disabled, "能整除的一对，÷ 按钮可用");
 board3.root.querySelector('[data-op="/"]').click();
 var mergedDiv = board3.tiles.filter(function (t) { return t.merged; })[0];
 ok(mergedDiv && TF24.fEqualsNumber(mergedDiv.value, 4), "除法自动选能整除的方向");
@@ -98,6 +112,8 @@ var mergedFraction = board4.tiles.filter(function (t) { return t.merged; })[0];
 ok(mergedFraction && mergedFraction.value.n === 8 && mergedFraction.value.d === 3,
   "分数题自动按大数在前得到 8/3", mergedFraction && (mergedFraction.value.n + "/" + mergedFraction.value.d));
 ok(board4.message.text.indexOf("分数") >= 0, "提示说明这是分数中间结果", board4.message.text);
+ok(!board4.root.querySelector(".tf24-frac-note").hidden, "分数题常驻「要用分数」提示");
+ok(board3.root.querySelector(".tf24-frac-note").hidden, "整数题不显示分数提示");
 
 /* ---------------- 题型注册 ---------------- */
 
@@ -119,6 +135,7 @@ var gate24 = Gate.create({
   everyMinutes: 0.02,
   challenges: ["twenty-four"],
   unlockDelay: 300,
+  storage: false, // 测试页不写门禁存档，避免互相污染
   onLock: function () { lockCalls++; },
   onUnlock: function () { unlockCalls++; }
 });
@@ -153,12 +170,37 @@ gate24.bodyEl.querySelector(".ch24-type").dispatchEvent(
 ok(gate24.passed === 1, "24 点通过计数加一");
 ok(events.pass === 1, "派发 gate:pass 事件");
 
+/* ---------------- 门禁不出分数题 ---------------- */
+
+var gateExpert = Gate.create({
+  everyMinutes: 60,
+  challenges: ["twenty-four"],
+  challengeOptions: { "twenty-four": { mode: "expert" } },
+  unlockDelay: 300,
+  storage: false
+});
+gateExpert.openNow();
+var expertTiles = gateExpert.bodyEl.querySelectorAll(".tf24-tile-value");
+var expertNums = Array.prototype.map.call(expertTiles, function (t) {
+  return parseInt(t.textContent, 10);
+});
+var expertInfo = TF24.analyze(expertNums, 24);
+ok(expertInfo.integerSolutionCount > 0, "门禁把高手模式降级，仍出整数解法的题", expertNums.join(","));
+ok(!expertInfo.requiresFraction, "门禁题不会要求用分数", expertNums.join(","));
+var expertHint = gateExpert.bodyEl.querySelector('[data-ch24="hint"]');
+expertHint.click();
+var expertMsg = gateExpert.bodyEl.querySelector(".ch24-msg").textContent;
+ok(expertMsg.indexOf("/") < 0 && expertMsg.indexOf("分数") < 0, "门禁的提示里不出现分数", expertMsg);
+ok(gateExpert.bodyEl.querySelector(".tf24-frac-note").hidden, "门禁不显示「要用分数」提示");
+gateExpert.destroy();
+
 /* ---------------- 唐诗门禁 ---------------- */
 
 var gatePoem = Gate.create({
   everyMinutes: 60,
   challenges: ["poem"],
-  unlockDelay: 300
+  unlockDelay: 300,
+  storage: false
 });
 gatePoem.openNow();
 ok(gatePoem.challengeId === "poem", "可以单独指定唐诗题型", gatePoem.challengeId);
@@ -173,15 +215,29 @@ ok(wrongOpt.disabled && wrongOpt.classList.contains("is-wrong"), "错误选项�
 ok(gatePoem.bodyEl.querySelector(".chpoem-msg").textContent.length > 0, "错误后给出提示");
 
 var rightOpt = gatePoem.bodyEl.querySelector('.chpoem-opt[data-right="1"]');
-rightOpt.click();
-ok(gatePoem.passed === 1, "选对后通过");
+ok(rightOpt.disabled, "答错后本题选项全部锁定，不能补选");
+ok(gatePoem.passed === 0, "答错不通过，等换题");
+
+// 换一个新门禁，选对这条路要单独验证
+var gatePoem2 = Gate.create({
+  everyMinutes: 60,
+  challenges: ["poem"],
+  unlockDelay: 300,
+  storage: false
+});
+gatePoem2.openNow();
+gatePoem2.bodyEl.querySelector('.chpoem-opt[data-right="1"]').click();
+ok(gatePoem2.passed === 1, "选对后通过");
+gatePoem2.destroy();
 
 /* ---------------- 随机与不重复 ---------------- */
 
 var gateMix = Gate.create({
   everyMinutes: 60,
   challenges: ["twenty-four", "poem"],
+  allowSkip: true,
   unlockDelay: 300,
+  storage: false,
   random: function () { return 0; }
 });
 gateMix.openNow();

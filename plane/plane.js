@@ -1982,9 +1982,10 @@
     }
     gate = window.Gate.create({
       everyMinutes: 5,
-      challenges: ['twenty-four', 'poem'],
+      challenges: ['twenty-four', 'poem', 'english'],
       showBadge: true,
       badgePosition: 'bottom-left',
+      openOnStart: /[?&]tf24demo=1/.test(location.search),
       kicker: '局间门禁 · 穿云战机',
       title: '先过一道关卡',
       note: '已经飞了 5 分钟。答完这道题，再回到航线。',

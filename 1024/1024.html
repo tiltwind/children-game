@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1024 · 陶片牌局</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23241a15'/%3E%3Crect x='5' y='5' width='22' height='22' rx='5' fill='%23e7bd6f'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='13' font-weight='bold' fill='%233b2a21' text-anchor='middle'%3E1024%3C/text%3E%3C/svg%3E">
+<style>
+/* ===== 基础 ===== */
+*{box-sizing:border-box}
+:root{
+  --ink:#f2e5d3;
+  --ink-dim:#a3948a;
+  --gold:#e0a95c;
+  --line:rgba(240,222,198,.13);
+  --tile-ink:#3c2b20;
+  --board-size:min(62vh,500px);
+  --num:ui-monospace,"SF Mono",Menlo,Consolas,"PingFang SC",monospace;
+  --sans:"PingFang SC","Helvetica Neue","Microsoft YaHei",Arial,sans-serif;
+}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #35241c 0%, #1e1410 42%, #120c0a 100%);
+  color:var(--ink);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* 印刷颗粒 */
+body::after{
+  content:"";position:fixed;inset:0;z-index:9;pointer-events:none;opacity:.06;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.shell{
+  position:relative;z-index:2;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  gap:clamp(26px,4vw,64px);
+  padding:clamp(22px,4vh,54px) clamp(18px,4vw,56px);
+}
+/* ===== 左栏 ===== */
+.rail{width:clamp(210px,22vw,272px);display:flex;flex-direction:column;gap:clamp(16px,2.4vh,26px);flex:0 0 auto}
+.brand-mark{
+  font-family:var(--num);font-weight:800;font-size:clamp(46px,6.4vw,74px);
+  line-height:.92;letter-spacing:-.045em;
+  font-variation-settings:"wdth" 92;
+  color:#f7ead8;
+  text-shadow:0 1px 0 rgba(255,236,214,.18), 0 10px 26px rgba(0,0,0,.5);
+}
+.brand-mark em{font-style:normal;color:var(--gold)}
+.brand-sub{
+  margin:12px 0 0;font-size:13px;line-height:1.75;color:var(--ink-dim);
+  max-width:24em;
+  border-left:2px solid rgba(224,169,92,.45);padding-left:11px;
+}
+.stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:11px 0 9px;display:flex;flex-direction:column;gap:9px}
+.stat-main{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.stat-main .label{font-size:11px;letter-spacing:.18em;color:var(--ink-dim)}
+.stat-main .val{
+  font-family:var(--num);font-weight:700;font-size:30px;line-height:1;
+  color:var(--gold);font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  transition:color .2s;
+}
+.stat-row{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--ink-dim)}
+.stat-row b{font-family:var(--num);color:#e8d8c4;font-variant-numeric:tabular-nums;font-weight:600}
+.progress{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-top:2px}
+.progress i{display:block;height:100%;width:5%;background:linear-gradient(90deg,#b47a3f,var(--gold));transition:width .5s cubic-bezier(.22,1,.36,1)}
+
+.powers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.power{
+  appearance:none;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:9px 4px 8px;
+  background:rgba(255,238,216,.035);
+  border:1px solid rgba(240,222,198,.16);
+  border-radius:4px;
+  color:#e9dac6;font-family:var(--sans);font-size:11.5px;
+  transition:background .16s,border-color .16s,transform .12s,opacity .2s;
+}
+.power svg{width:17px;height:17px;stroke:var(--gold);stroke-width:1.6;fill:none;opacity:.95}
+.power:hover:not(:disabled){background:rgba(224,169,92,.12);border-color:rgba(224,169,92,.5)}
+.power:active:not(:disabled){transform:translateY(1px) scale(.985)}
+.power:disabled{opacity:.32;cursor:default}
+.power .cnt{
+  position:absolute;top:-7px;right:-6px;
+  min-width:17px;height:17px;padding:0 4px;
+  display:grid;place-items:center;
+  font-family:var(--num);font-size:10.5px;font-weight:700;
+  color:#2a1c14;background:var(--gold);border-radius:9px;
+}
+.power.on{background:rgba(224,169,92,.22);border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(224,169,92,.5)}
+.tips{font-size:11.5px;line-height:1.85;color:#8f8178;margin:0;padding:0;list-style:none}
+.tips li{position:relative;padding-left:12px}
+.tips li::before{content:"";position:absolute;left:0;top:.72em;width:4px;height:1px;background:rgba(224,169,92,.6)}
+
+/* ===== 舞台 ===== */
+.stage{position:relative;display:flex;flex-direction:column;gap:14px;align-items:center;flex:0 1 auto}
+.board-wrap{
+  width:var(--board-size);
+  padding:11px;
+  border-radius:24px;
+  background:
+    repeating-linear-gradient(94deg, rgba(255,226,196,.05) 0 2px, rgba(0,0,0,.12) 2px 5px),
+    linear-gradient(150deg,#5a3d2b,#3a261a 55%,#4a3020);
+  box-shadow:0 26px 56px rgba(0,0,0,.55), 0 2px 0 rgba(255,228,200,.12) inset, 0 0 0 1px rgba(0,0,0,.5);
+}
+.board-wrap.shake{animation:shake .3s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shake{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  20%{transform:translate(4px,-3px) rotate(-.4deg)}
+  45%{transform:translate(-4px,2px) rotate(.35deg)}
+  70%{transform:translate(3px,2px) rotate(-.2deg)}
+  88%{transform:translate(-2px,-1px) rotate(0)}
+}
+.board{
+  position:relative;width:100%;aspect-ratio:1/1;
+  border-radius:15px;overflow:hidden;
+  background:
+    radial-gradient(110% 70% at 50% -10%, rgba(255,222,186,.09), transparent 62%),
+    linear-gradient(165deg,#241813,#180f0c 72%);
+  box-shadow:inset 0 4px 0 rgba(255,228,200,.06), inset 0 -14px 30px rgba(0,0,0,.55), inset 0 1px 3px rgba(0,0,0,.7);
+  touch-action:none;
+  user-select:none;-webkit-user-select:none;
+}
+.cells{
+  position:absolute;inset:0;
+  display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);
+  gap:var(--gap,12px);padding:var(--pad,14px);
+  pointer-events:none;
+}
+.cell{
+  border-radius:8px;
+  background:linear-gradient(180deg, rgba(255,220,186,.045), rgba(0,0,0,.26));
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,232,206,.05);
+}
+.tiles{position:absolute;inset:0}
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+
+/* 牌片 */
+.tile{
+  position:absolute;
+  width:var(--cell,110px);height:var(--cell,110px);
+  left:calc(var(--pad,14px) + var(--c,0) * (var(--cell,110px) + var(--gap,12px)));
+  top:calc(var(--pad,14px) + var(--r,0) * (var(--cell,110px) + var(--gap,12px)));
+  display:flex;align-items:center;justify-content:center;
+  border-radius:9px;
+  color:var(--tile-ink);
+  font-family:var(--num);
+  font-weight:700;font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;
+  will-change:left,top,transform;
+  transition:left .135s cubic-bezier(.22,1,.36,1), top .135s cubic-bezier(.22,1,.36,1);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8),
+    inset 0 -3px 5px rgba(126,96,68,.22),
+    0 3px 0 rgba(0,0,0,.22),
+    0 7px 14px rgba(0,0,0,.28);
+  animation:tileIn .18s cubic-bezier(.22,1,.36,1) both;
+  cursor:default;
+}
+.tile .num{display:block;transform:translateY(-1px);position:relative;z-index:2;text-shadow:0 1px 0 rgba(255,255,255,.3)}
+.tile::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;z-index:1;pointer-events:none;
+  background:
+    radial-gradient(120% 78% at 26% 4%, rgba(255,255,255,.5), rgba(255,255,255,.08) 40%, transparent 64%),
+    radial-gradient(90% 55% at 78% 102%, rgba(110,72,38,.24), transparent 62%);
+}
+.tile[data-v="1024"] .num,.tile[data-v="2048"] .num{text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.tile[data-v="1024"]::after,.tile[data-v="2048"]::after{
+  background:radial-gradient(120% 78% at 26% 4%, rgba(255,240,205,.3), rgba(255,255,255,.04) 40%, transparent 64%);
+}
+@keyframes tileIn{
+  0%{transform:scale(.55);opacity:0}
+  60%{opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+.tile[data-v="2"]{background:linear-gradient(170deg,#fbf2e3,#f0e2cc 46%,#e4d3ba)}
+.tile[data-v="4"]{background:linear-gradient(170deg,#fbeedb,#efdcbe 46%,#e0c9a4)}
+.tile[data-v="8"]{background:linear-gradient(170deg,#fbe6c2,#eed198 46%,#dcb97c)}
+.tile[data-v="16"]{background:linear-gradient(170deg,#fbe0ab,#e9c47a 46%,#d4a85a);color:#3c2a18}
+.tile[data-v="32"]{background:linear-gradient(170deg,#f8d492,#e0ab5c 46%,#c88d3f);color:#39260f}
+.tile[data-v="64"]{background:linear-gradient(170deg,#f4c077,#d98f42 46%,#bf7229);color:#33200c}
+.tile[data-v="128"]{background:linear-gradient(170deg,#eeae66,#cb7738 46%,#b45f28);color:#fff3e1}
+.tile[data-v="256"]{background:linear-gradient(170deg,#e69655,#b8592f 46%,#9c4425);color:#fff4e5}
+.tile[data-v="512"]{background:linear-gradient(170deg,#dc7c47,#a44b2c 46%,#8a3822);color:#fff5e7}
+.tile[data-v="1024"]{
+  background:linear-gradient(170deg,#3d7561,#2a5a4a 46%,#1d4238);color:#f8ebc9;
+  box-shadow:inset 0 1px 0 rgba(255,236,190,.5), inset 0 0 0 1px rgba(240,196,116,.55),
+    0 3px 0 rgba(0,0,0,.3), 0 10px 22px rgba(0,0,0,.4), 0 0 26px rgba(224,169,92,.22);
+}
+.tile[data-v="2048"]{
+  background:linear-gradient(170deg,#2f5c4d,#1d4036 46%,#132b25);color:#ffdf9f;
+  box-shadow:inset 0 1px 0 rgba(255,236,190,.45), inset 0 0 0 1px rgba(240,196,116,.45),
+    0 3px 0 rgba(0,0,0,.3), 0 10px 22px rgba(0,0,0,.4), 0 0 34px rgba(224,169,92,.28);
+}
+.tile.pop{animation:pop .24s cubic-bezier(.34,1.5,.64,1) both}
+@keyframes pop{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.15)}
+  70%{transform:scale(.985)}
+  100%{transform:scale(1)}
+}
+.tile.pick{cursor:crosshair;outline:2px solid var(--gold);outline-offset:-3px}
+.tile.dying{animation:dieOut .26s ease-out both;pointer-events:none}
+@keyframes dieOut{
+  0%{transform:scale(1);opacity:1}
+  45%{transform:scale(1.14) rotate(4deg);opacity:.9}
+  100%{transform:scale(.25) rotate(22deg);opacity:0}
+}
+
+/* 特效层 */
+.shard{
+  position:absolute;width:7px;height:7px;border-radius:2px;
+  transform:translate(-50%,-50%);
+  animation:shard .62s cubic-bezier(.18,.72,.3,1) forwards;
+}
+@keyframes shard{
+  0%{transform:translate(-50%,-50%) rotate(0) scale(1);opacity:1}
+  100%{transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) rotate(var(--rot)) scale(.25);opacity:0}
+}
+.float{
+  position:absolute;transform:translate(-50%,0);
+  font-family:var(--num);font-weight:700;font-size:15px;
+  color:#ffe2ac;-webkit-text-stroke:.5px rgba(30,16,6,.55);
+  text-shadow:0 1px 0 rgba(0,0,0,.5), 0 3px 10px rgba(0,0,0,.85);
+  pointer-events:none;white-space:nowrap;
+  animation:floatUp .85s cubic-bezier(.2,.8,.3,1) forwards;
+}
+@keyframes floatUp{
+  0%{opacity:0;transform:translate(-50%,4px) scale(.85)}
+  25%{opacity:1;transform:translate(-50%,-8px) scale(1.02)}
+  100%{opacity:0;transform:translate(-50%,-48px) scale(1)}
+}
+.combo-tag{
+  position:absolute;left:50%;top:7px;transform:translateX(-50%);
+  padding:4px 12px 5px;border-radius:3px;
+  font-family:var(--num);font-weight:700;font-size:13px;letter-spacing:.04em;
+  color:#2a1a0e;background:linear-gradient(100deg,#f0c07a,#e0a95c);
+  box-shadow:0 6px 18px rgba(0,0,0,.45);
+  pointer-events:none;animation:comboIn .55s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes comboIn{
+  0%{opacity:0;transform:translateX(-50%) translateY(8px) scale(.8)}
+  30%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.06)}
+  60%{transform:translateX(-50%) scale(1)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-14px) scale(1)}
+}
+.ring{
+  position:absolute;border-radius:50%;
+  border:1px solid rgba(224,169,92,.75);
+  transform:translate(-50%,-50%);
+  animation:ring .5s ease-out forwards;pointer-events:none;
+}
+@keyframes ring{
+  0%{width:10%;height:10%;opacity:.9}
+  100%{width:74%;height:74%;opacity:0}
+}
+
+/* 终局：只做轻微压暗，牌面保持完整可见 */
+.overlay{
+  position:absolute;inset:0;z-index:4;pointer-events:none;
+  border-radius:14px;
+  background:
+    radial-gradient(115% 86% at 50% 44%, rgba(10,7,5,0) 40%, rgba(10,7,5,.4) 100%),
+    linear-gradient(180deg, rgba(10,7,5,.06), rgba(10,7,5,.24));
+  box-shadow:inset 0 0 0 1px rgba(224,169,92,.38), inset 0 0 34px rgba(0,0,0,.28);
+  opacity:0;transition:opacity .42s ease;
+}
+.overlay.on{opacity:1}
+
+/* 战果条：挂在棋盘外侧下方，不压住任何一块牌 */
+.result{
+  position:absolute;left:calc(50% - var(--board-size)/2);width:var(--board-size);
+  top:calc(100% - 38px);z-index:6;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:13px 14px;border-radius:5px;
+  background:linear-gradient(180deg,#231812,#150e0a);
+  border:1px solid rgba(240,222,198,.2);
+  box-shadow:0 22px 46px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,236,210,.12);
+  opacity:0;transform:translateY(-8px);pointer-events:none;
+  transition:opacity .28s ease,transform .38s cubic-bezier(.22,1,.36,1);
+}
+.result.on{opacity:1;transform:translateY(0);pointer-events:auto}
+.result::before{content:"";position:absolute;left:14px;right:14px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(224,169,92,.65),transparent)}
+.r-kicker{display:block;font-size:10.5px;letter-spacing:.14em;color:rgba(224,169,92,.85);margin-bottom:4px}
+.r-score{font-family:var(--num);font-weight:800;font-size:31px;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.r-score span{font-family:var(--sans);font-size:11px;font-weight:400;color:#a3948a;margin-left:5px;letter-spacing:0}
+.r-meta{margin-top:6px;font-size:11px;color:#94857a;line-height:1.5}
+.r-meta b{color:#e2d2bf;font-family:var(--num);font-weight:600}
+.r-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.r-actions .btn{
+  appearance:none;cursor:pointer;font-family:var(--sans);font-size:12.5px;
+  padding:9px 14px;border-radius:4px;
+  color:#f2e5d3;background:rgba(255,238,216,.06);
+  border:1px solid rgba(240,222,198,.25);
+  transition:background .16s,border-color .16s,transform .12s,color .16s;
+}
+.r-actions .btn:hover{background:rgba(255,238,216,.13);border-color:rgba(240,222,198,.5)}
+.r-actions .btn:active{transform:translateY(1px)}
+.r-actions .btn.primary{color:#2a1a0e;background:linear-gradient(100deg,#f2c684,#dfa256);border-color:#f2c684;font-weight:500}
+.r-actions .btn.primary:hover{background:linear-gradient(100deg,#f8d29a,#e8ae63)}
+.stage.finished .under{opacity:0;pointer-events:none}
+/* 棋盘下方 */
+.under{width:var(--board-size);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.under .meta{font-size:11.5px;color:#8c7d73;line-height:1.5}
+.under .meta b{color:#dcc9b3;font-family:var(--num);font-weight:600}
+.ghost{
+  appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  padding:8px 13px;border-radius:4px;
+  background:transparent;border:1px solid rgba(240,222,198,.22);
+  color:#e5d5c1;font-family:var(--sans);font-size:12px;
+  transition:border-color .16s,background .16s;
+}
+.ghost:hover{border-color:rgba(224,169,92,.6);background:rgba(224,169,92,.08)}
+.ghost svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.6;fill:none}
+
+/* 静音按钮 */
+.mute{
+  position:fixed;right:clamp(14px,2.5vw,30px);top:clamp(14px,2.5vw,26px);z-index:20;
+  width:38px;height:38px;border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(28,19,15,.72);border:1px solid rgba(240,222,198,.2);
+  color:#e8d8c4;cursor:pointer;
+  transition:border-color .16s,color .16s,background .16s;
+}
+.mute:hover{border-color:rgba(224,169,92,.6);color:var(--gold)}
+.mute svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.7;fill:none}
+.mute .off-mark{display:none}
+.mute[aria-checked="false"] .off-mark{display:block}
+.mute[aria-checked="false"] .wave-mark{display:none}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ===== 自适应 ===== */
+@media (max-width:860px){
+  .shell{flex-direction:column;gap:13px;padding:16px 14px 26px;justify-content:flex-start;min-height:auto}
+  .rail{display:contents}
+  .brand{order:1;width:min(88vw,460px);margin:0 auto;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .brand-mark{font-size:38px;line-height:1}
+  .brand-sub{margin:0;font-size:11.5px;line-height:1.6;max-width:19em;padding-left:0;border-left:0;color:#9a8b80}
+  .stats{
+    order:2;width:min(88vw,460px);margin:0 auto;
+    display:grid;grid-template-columns:auto auto 1fr;align-items:baseline;gap:6px 10px;
+    padding:8px 0 7px;border-top:0;
+  }
+  .stat-main{grid-column:1/3;display:flex;justify-content:flex-start;gap:7px}
+  .stat-main .label{font-size:10.5px}
+  .stat-main .val{font-size:25px}
+  .stat-row{grid-column:3;display:flex;justify-content:flex-end;gap:9px;font-size:10.5px}
+  .progress{grid-column:1/4;margin-top:2px}
+  .stage{order:3;width:100%}
+  .powers{order:4;width:var(--board-size);margin:0 auto}
+  .tips{order:5;display:block;width:var(--board-size);margin:0 auto;font-size:10.5px;line-height:1.7;color:#8a7c73}
+  .tips li:nth-child(3){display:none}
+  :root{--board-size:min(88vw,460px)}
+  .under{width:var(--board-size)}
+  .board-wrap{padding:9px;border-radius:20px}
+  .result{
+    position:static;left:auto;top:auto;width:var(--board-size);margin:10px auto 0;
+    display:none;flex-direction:column;align-items:stretch;gap:11px;
+  }
+  .result.on{display:flex;transform:none}
+  .stage.finished .under{display:none}
+  .r-actions{justify-content:flex-start}
+  .r-score{font-size:26px}
+  .r-meta{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tile,.board-wrap,.overlay,.progress i{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  .tile{animation:none}
+  .shard,.float,.ring,.combo-tag{display:none}
+}
+</style>
+<link rel="stylesheet" href="../limit/limit.css">
+<link rel="stylesheet" href="../playclock/playclock.css">
+</head>
+<body>
+<button class="mute" id="mute" role="switch" aria-checked="true" aria-label="音效开关" title="音效开关">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/>
+    <path class="wave-mark" d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.8a7.6 7.6 0 0 1 0 10.4"/>
+    <path class="off-mark" d="M16.4 9.6l4 4.8M20.4 9.6l-4 4.8"/>
+  </svg>
+</button>
+
+<div class="shell">
+  <!-- ===== 左栏：题名与状态 ===== -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">10<em>24</em></div>
+      <p class="brand-sub">十六格陶片，一手推一手合。<br>向同一侧连推两次，釉色会亮起来。</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat-main">
+        <span class="label">得分</span>
+        <span class="val" id="score">0</span>
+      </div>
+      <div class="stat-row">
+        <span>最高分 <b id="best">0</b></span>
+        <span>最大牌 <b id="maxTile">2</b></span>
+        <span>步数 <b id="moves">0</b></span>
+      </div>
+      <div class="progress"><i id="bar"></i></div>
+    </div>
+
+    <div class="powers">
+      <button class="power" id="p-undo" title="撤销上一步（Z）">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H15a5 5 0 0 1 0 10H8"/><path d="M11.5 4.5L8.6 7l2.9 2.5"/></svg>
+        <span>撤销</span><span class="cnt" id="n-undo">3</span>
+      </button>
+      <button class="power" id="p-hammer" title="敲掉任意一块陶片（点牌片）">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.4 4.6l6 6-2.6 2.6-6-6z"/><path d="M12.2 9.4L5 16.6V19h2.4l7.2-7.2"/></svg>
+        <span>敲掉</span><span class="cnt" id="n-hammer">1</span>
+      </button>
+      <button class="power" id="p-shuffle" title="重新排布现有陶片">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l4 10h3"/><path d="M4 17h3l4-10h3"/><path d="M14 4.8l2.6 2.2-2.6 2.2M14 14.8l2.6 2.2-2.6 2.2"/><path d="M17 7h3M17 17h3"/></svg>
+        <span>洗牌</span><span class="cnt" id="n-shuffle">1</span>
+      </button>
+    </div>
+
+    <ul class="tips">
+      <li>方向键 / WASD / 拖动牌面，Z 撤销</li>
+      <li>同一回合多次合并会累计连击，得分上浮</li>
+      <li>道具每局限额，用掉不再恢复</li>
+    </ul>
+  </aside>
+
+  <!-- ===== 舞台：棋盘 ===== -->
+  <main class="stage">
+    <div class="board-wrap" id="wrap">
+      <div class="board" id="board">
+        <div class="cells" id="cells" aria-hidden="true"></div>
+        <div class="tiles" id="tiles"></div>
+        <div class="fx" id="fx" aria-hidden="true"></div>
+        <div class="overlay" id="overlay" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="under" id="under">
+      <span class="meta">目标 <b>1024</b> · 连击 <b id="combo">0</b></span>
+      <button class="ghost" id="restart">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.2-5.1"/><path d="M19.4 4.6v3.2h-3.2"/></svg>
+        重开一局
+      </button>
+    </div>
+
+    <div class="result" id="result" role="status">
+      <div>
+        <span class="r-kicker" id="r-kicker">终局</span>
+        <div class="r-score"><b id="r-score">0</b><span>分</span></div>
+        <div class="r-meta" id="r-meta"></div>
+      </div>
+      <div class="r-actions" id="r-actions"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const S = 4, GOAL = 1024;
+  const boardEl = document.getElementById('board');
+  const tilesEl = document.getElementById('tiles');
+  const fxEl    = document.getElementById('fx');
+  const wrapEl  = document.getElementById('wrap');
+  const cellsEl = document.getElementById('cells');
+  const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const TILE_COLORS = {
+    2:'#efe1cb',4:'#e9d6b8',8:'#e7c98e',16:'#e2b96f',32:'#d79f52',
+    64:'#cf8740',128:'#c46f36',256:'#ad5530',512:'#97402c',1024:'#396e5c',2048:'#27503f'
+  };
+  const colorOf = v => TILE_COLORS[v] || '#2f5c4d';
+
+  /* ===================== 音效（Web Audio 现场合成） ===================== */
+  const Sound = (function(){
+    let ctx = null, master = null, noiseBuf = null;
+    let muted = localStorage.getItem('t1024-mute') === '1';
+    function ensure(){
+      if(ctx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = muted ? 0 : 0.32;
+      master.connect(ctx.destination);
+      const len = Math.floor(ctx.sampleRate * 0.6);
+      noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const ch = noiseBuf.getChannelData(0);
+      for(let i=0;i<len;i++) ch[i] = Math.random()*2-1;
+    }
+    function gate(){ ensure(); if(!ctx) return false; if(ctx.state === 'suspended') ctx.resume(); return !muted; }
+    function burst(t, dur, f1, f2, q, vol){
+      const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+      const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = q;
+      bp.frequency.setValueAtTime(f1, t); bp.frequency.exponentialRampToValueAtTime(f2, t+dur);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.012, dur*0.4));
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      src.connect(bp).connect(g).connect(master);
+      src.start(t); src.stop(t+dur+0.02);
+    }
+    function tone(t, freq, dur, vol, type){
+      const o = ctx.createOscillator(); o.type = type || 'triangle';
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.frequency.setValueAtTime(freq, t);
+      o.connect(g).connect(master);
+      o.start(t); o.stop(t+dur+0.02);
+    }
+    return {
+      isMuted(){ return muted; },
+      setMuted(m){
+        muted = m; localStorage.setItem('t1024-mute', m ? '1' : '0');
+        if(ctx && master){
+          const t = ctx.currentTime;
+          master.gain.cancelScheduledValues(t);
+          master.gain.linearRampToValueAtTime(m ? 0 : 0.32, t + 0.06);
+        }
+      },
+      play(kind, lvl){
+        if(!gate()) return;
+        const t = ctx.currentTime;
+        switch(kind){
+          case 'move':
+            burst(t, 0.13, 760, 240, 1.1, 0.10);
+            break;
+          case 'invalid':
+            burst(t, 0.11, 260, 120, 1.4, 0.06);
+            tone(t, 92, 0.13, 0.05, 'sine');
+            break;
+          case 'spawn':
+            burst(t, 0.045, 3400, 2100, 3.2, 0.035);
+            break;
+          case 'merge': {
+            const n = Math.max(0, (lvl||1) - 1);           // 0 → 2, 1 → 4 …
+            const base = 232 + n * 34;
+            tone(t, base, 0.19, 0.11, 'triangle');
+            tone(t, base * 2.02, 0.13, 0.035, 'sine');
+            burst(t, 0.05, 2600 + n*80, 1500, 5.5, 0.055);
+            if(n >= 4){                                     // 32 以上加一声木鱼般的低频
+              tone(t+0.02, base * 0.5, 0.3, 0.05, 'sine');
+            }
+            break;
+          }
+          case 'combo':
+            tone(t, 720, 0.12, 0.06, 'sine');
+            tone(t+0.09, 940, 0.14, 0.055, 'sine');
+            break;
+          case 'power':
+            burst(t, 0.15, 900, 380, 1.6, 0.07);
+            tone(t+0.02, 420, 0.2, 0.06, 'sine');
+            break;
+          case 'win':
+            [523, 659, 784, 988, 1319].forEach((f,i)=>{
+              tone(t + i*0.085, f, 0.32, 0.07, 'triangle');
+            });
+            break;
+          case 'lose':
+            [262, 220, 175, 131].forEach((f,i)=>{
+              tone(t + i*0.11, f, 0.3, 0.06, 'sine');
+            });
+            break;
+        }
+      }
+    };
+  })();
+
+  /* ===================== 几何 ===================== */
+  let CELL = 100;
+  function layout(){
+    const W = boardEl.clientWidth;
+    const pad = Math.max(9, W * 0.033);
+    const gap = Math.max(7, W * 0.026);
+    const cell = (W - 2*pad - 3*gap) / 4;
+    CELL = cell;
+    boardEl.style.setProperty('--pad', pad + 'px');
+    boardEl.style.setProperty('--gap', gap + 'px');
+    boardEl.style.setProperty('--cell', cell + 'px');
+    tiles.forEach(t => sizeTile(t));
+  }
+  function sizeTile(t){
+    if(!t.el) return;
+    const v = t.v;
+    const k = v < 10 ? 0.46 : v < 100 ? 0.40 : v < 1000 ? 0.315 : 0.285;
+    t.num.style.fontSize = Math.round(CELL * k) + 'px';
+  }
+  function centerOf(r, c){
+    const pad = parseFloat(boardEl.style.getPropertyValue('--pad')) || 0;
+    const gap = parseFloat(boardEl.style.getPropertyValue('--gap')) || 0;
+    return { x: pad + c*(CELL+gap) + CELL/2, y: pad + r*(CELL+gap) + CELL/2 };
+  }
+
+  /* ===================== 状态 ===================== */
+  let tiles = [], idc = 1;
+  let score = 0, best = Number(localStorage.getItem('t1024-best') || 0);
+  let moves = 0, combo = 0, maxTile = 2;
+  let over = false, won = false, keepGoing = false, locked = false, queued = null;
+  let broke = false, counted = false;   // 全站休息中 / 本局是否已记入「玩满 4 次」
+
+  // 全站强制休息：休息期间不接受任何操作
+  document.addEventListener('playclock:breakstart', () => { broke = true; });
+  document.addEventListener('playclock:breakend',  () => { broke = false; });
+
+  // 一局真正走完（达成或推不动）才计一次，接着冲 2048 不重复计
+  function countOnce(){
+    if(counted) return;
+    counted = true;
+    if(window.GameLimit) window.GameLimit.count('1024');
+  }
+  let history = null, hammer = false;
+  const powers = { undo:3, hammer:1, shuffle:1 };
+
+  const $ = id => document.getElementById(id);
+  const scoreEl = $('score'), bestEl = $('best'), maxEl = $('maxTile'), movesEl = $('moves'),
+        barEl = $('bar'), comboEl = $('combo');
+
+  function occupancy(){
+    const g = Array.from({length:S}, () => Array(S).fill(null));
+    for(const t of tiles){ if(!t.dead) g[t.r][t.c] = t; }
+    return g;
+  }
+
+  /* ===================== 渲染 ===================== */
+  function createEl(t){
+    const el = document.createElement('div');
+    el.className = 'tile';
+    el.dataset.v = t.v;
+    const num = document.createElement('span');
+    num.className = 'num';
+    num.textContent = t.v;
+    el.appendChild(num);
+    el.style.setProperty('--r', t.r);
+    el.style.setProperty('--c', t.c);
+    t.el = el; t.num = num;
+    tilesEl.appendChild(el);
+    sizeTile(t);
+  }
+  function place(t){
+    if(!t.el) return;
+    t.el.style.setProperty('--r', t.r);
+    t.el.style.setProperty('--c', t.c);
+  }
+  function repaint(t){
+    t.el.dataset.v = t.v;
+    t.num.textContent = t.v;
+    sizeTile(t);
+  }
+  function addTile(v, r, c){
+    const t = { id: idc++, v, r, c, dead:false };
+    tiles.push(t);
+    createEl(t);
+    return t;
+  }
+  function emptyCells(){
+    const g = occupancy(), out = [];
+    for(let r=0;r<S;r++) for(let c=0;c<S;c++) if(!g[r][c]) out.push([r,c]);
+    return out;
+  }
+  function addRandom(announce){
+    const cells = emptyCells();
+    if(!cells.length) return null;
+    const [r,c] = cells[Math.floor(Math.random()*cells.length)];
+    const v = Math.random() < 0.9 ? 2 : 4;
+    const t = addTile(v, r, c);
+    if(announce){ t.el.classList.add('pop'); Sound.play('spawn'); }
+    return t;
+  }
+
+  /* ===================== 特效 ===================== */
+  function shake(){
+    if(RM) return;
+    wrapEl.classList.remove('shake');
+    void wrapEl.offsetWidth;
+    wrapEl.classList.add('shake');
+    setTimeout(() => wrapEl.classList.remove('shake'), 340);
+  }
+  function burst(r, c, v){
+    if(RM) return;
+    const {x, y} = centerOf(r, c);
+    const base = colorOf(v);
+    const n = v >= 128 ? 9 : 6;
+    for(let i=0;i<n;i++){
+      const s = document.createElement('div');
+      s.className = 'shard';
+      const ang = (Math.PI*2*i)/n + Math.random()*0.6;
+      const dist = CELL*0.28 + Math.random()*CELL*0.32;
+      s.style.setProperty('--tx', Math.cos(ang)*dist + 'px');
+      s.style.setProperty('--ty', Math.sin(ang)*dist + 'px');
+      s.style.setProperty('--rot', (Math.random()*220-110) + 'deg');
+      s.style.left = x + 'px';
+      s.style.top = y + 'px';
+      const size = Math.max(4, CELL * (0.045 + Math.random()*0.04));
+      s.style.width = s.style.height = size + 'px';
+      s.style.background = base;
+      s.style.boxShadow = '0 0 12px rgba(0,0,0,.35)';
+      const life = 560 + Math.random()*160;
+      s.style.animationDuration = life + 'ms';
+      fxEl.appendChild(s);
+      setTimeout(() => s.remove(), life + 60);
+    }
+    if(v >= 128){
+      const ring = document.createElement('div');
+      ring.className = 'ring';
+      ring.style.left = x + 'px'; ring.style.top = y + 'px';
+      fxEl.appendChild(ring);
+      setTimeout(() => ring.remove(), 560);
+    }
+  }
+  function floatText(r, c, text){
+    if(RM) return;
+    const {x, y} = centerOf(r, c);
+    const el = document.createElement('div');
+    el.className = 'float';
+    el.textContent = text;
+    el.style.left = x + 'px';
+    el.style.top = (y - CELL*0.58) + 'px';
+    fxEl.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+  function comboTag(text){
+    if(RM) return;
+    const el = document.createElement('div');
+    el.className = 'combo-tag';
+    el.textContent = text;
+    fxEl.appendChild(el);
+    setTimeout(() => el.remove(), 600);
+  }
+
+  /* ===================== 计分与 HUD ===================== */
+  function updateHUD(){
+    scoreEl.textContent = score.toLocaleString();
+    bestEl.textContent = best.toLocaleString();
+    maxEl.textContent = maxTile;
+    movesEl.textContent = moves;
+    comboEl.textContent = combo;
+    const lo = Math.log2(2), hi = Math.log2(GOAL);
+    const p = Math.min(1, Math.max(0, (Math.log2(maxTile) - lo) / (hi - lo)));
+    barEl.style.width = (6 + p*94) + '%';
+    barEl.style.background = maxTile >= GOAL
+      ? 'linear-gradient(90deg,#7fbf9d,#f2d18a)'
+      : 'linear-gradient(90deg,#bb8244,#e0a95c)';
+    if(score > best){
+      best = score;
+      localStorage.setItem('t1024-best', String(best));
+      bestEl.textContent = best.toLocaleString();
+    }
+    ['undo','hammer','shuffle'].forEach(k => {
+      const btn = $('p-' + k);
+      $('n-' + k).textContent = powers[k];
+      btn.disabled = powers[k] <= 0 || over || locked || (k === 'undo' && !history);
+      if(k === 'hammer') btn.classList.toggle('on', hammer);
+    });
+    tiles.forEach(t => t.el && t.el.classList.toggle('pick', hammer));
+  }
+
+  /* ===================== 移动 ===================== */
+  function buildLines(dir){
+    const fwd = [0,1,2,3], back = [3,2,1,0];
+    const rr = dir === 'down' ? back : fwd;
+    const cc = dir === 'right' ? back : fwd;
+    const lines = [];
+    if(dir === 'left' || dir === 'right'){
+      for(let r=0;r<S;r++) lines.push(cc.map(c => [r,c]));
+    } else {
+      for(let c=0;c<S;c++) lines.push(rr.map(r => [r,c]));
+    }
+    return lines;
+  }
+
+  function snapshot(){
+    return {
+      tiles: tiles.map(t => ({id:t.id, v:t.v, r:t.r, c:t.c})),
+      score, moves, combo, maxTile
+    };
+  }
+
+  function doMove(dir){
+    if(over || locked || broke) return;
+    if(hammer) return;                       // 敲除模式下不响应方向
+    const occ = occupancy();
+    const lines = buildLines(dir);
+    const before = snapshot();
+    let moved = false;
+    const merges = [];
+
+    for(const line of lines){
+      const seq = [];
+      for(const [r,c] of line){ const t = occ[r][c]; if(t) seq.push(t); }
+      let k = 0, prev = null;
+      for(const t of seq){
+        if(prev && prev.v === t.v){
+          prev.v *= 2;
+          t.dead = true;
+          t.r = prev.r; t.c = prev.c;
+          moved = true;
+          merges.push({ v: prev.v, r: prev.r, c: prev.c, tile: prev });
+          prev = null;
+        } else {
+          const [r,c] = line[k];
+          if(t.r !== r || t.c !== c) moved = true;
+          t.r = r; t.c = c;
+          k++; prev = t;
+        }
+      }
+    }
+
+    if(!moved){
+      Sound.play('invalid');
+      combo = 0;
+      wrapEl.animate
+        ? (!RM && wrapEl.animate(
+            [{transform:'translateX(0)'},{transform:'translateX(-3px)'},{transform:'translateX(3px)'},{transform:'translateX(0)'}],
+            {duration:160, easing:'ease-out'})
+          )
+        : null;
+      updateHUD();
+      return;
+    }
+
+    history = before;
+    moves++;
+
+    if(merges.length){
+      combo = combo + 1;
+    } else {
+      combo = 0;
+    }
+    const mult = 1 + Math.min(Math.max(combo - 1, 0), 5) * 0.2;
+    const mergedSum = merges.reduce((a,m) => a + m.v, 0);
+    const gained = Math.round(mergedSum * mult);
+    score += gained;
+
+    tiles.forEach(place);
+    Sound.play('move');
+    updateHUD();
+
+    locked = true;
+    setTimeout(() => settle(merges, gained, mult), 140);
+  }
+
+  function settle(merges, gained, mult){
+    tiles = tiles.filter(t => {
+      if(t.dead){ t.el && t.el.remove(); return false; }
+      return true;
+    });
+
+    for(const m of merges){
+      const t = m.tile;
+      if(!t.el) continue;
+      repaint(t);
+      t.el.classList.remove('pop');
+      if(!RM){
+        void t.el.offsetWidth;
+        t.el.classList.add('pop');
+      }
+      burst(m.r, m.c, t.v);
+    }
+
+    if(merges.length){
+      const top = merges.reduce((a,b) => b.v > a.v ? b : a);
+      Sound.play('merge', Math.log2(top.v));
+      floatText(top.r, top.c, '+' + gained);
+      if(top.v >= 128) shake();
+      if(combo >= 2){
+        comboTag('连击 ' + combo + ' ×' + mult.toFixed(1).replace('.0',''));
+        Sound.play('combo');
+      }
+    }
+
+    maxTile = tiles.reduce((a,t) => Math.max(a, t.v), maxTile);
+    addRandom(true);
+    locked = false;
+    updateHUD();
+    checkState();
+
+    if(queued && !over){
+      const q = queued; queued = null;
+      doMove(q);
+    }
+  }
+
+  /* ===================== 结束判定 ===================== */
+  function hasMove(){
+    const g = occupancy();
+    for(let r=0;r<S;r++) for(let c=0;c<S;c++){
+      if(!g[r][c]) return true;
+      const v = g[r][c].v;
+      if(r+1<S && g[r+1][c] && g[r+1][c].v === v) return true;
+      if(c+1<S && g[r][c+1] && g[r][c+1].v === v) return true;
+    }
+    return false;
+  }
+
+  function checkState(){
+    if(!won && maxTile >= GOAL){
+      showWin();
+      return;
+    }
+    if(!hasMove()){
+      endGame();
+    }
+  }
+
+  const overlay = $('overlay');
+  const resultEl = $('result');
+  const stageEl = document.querySelector('.stage');
+
+  function hideOverlay(){
+    overlay.classList.remove('on');
+    resultEl.classList.remove('on');
+    stageEl.classList.remove('finished');
+  }
+
+  function showResult(kind){
+    stageEl.classList.add('finished');
+    overlay.classList.add('on');
+    $('r-kicker').textContent = kind === 'win' ? '达成 · 深青釉' : '终局 · 四面都推不动';
+    $('r-score').textContent = score.toLocaleString();
+    $('r-meta').innerHTML = '最大牌 <b>' + maxTile + '</b> · <b>' + moves + '</b> 步 · 连击 <b>' + combo + '</b>';
+    const acts = $('r-actions');
+    acts.innerHTML = '';
+    const save = document.createElement('button');
+    save.className = 'btn primary';
+    save.textContent = '保存战果';
+    save.onclick = () => savePoster(kind);
+    acts.appendChild(save);
+    if(kind === 'win'){
+      const go = document.createElement('button');
+      go.className = 'btn';
+      go.textContent = '接着冲 2048';
+      go.onclick = () => { keepGoing = true; hideOverlay(); };
+      acts.appendChild(go);
+    }
+    const again = document.createElement('button');
+    again.className = 'btn';
+    again.textContent = kind === 'win' ? '重开一局' : '再来一局';
+    again.onclick = reset;
+    acts.appendChild(again);
+    resultEl.classList.add('on');
+  }
+
+  function showWin(){
+    won = true;
+    countOnce();
+    Sound.play('win');
+    showResult('win');
+  }
+  function endGame(){
+    over = true;
+    countOnce();
+    Sound.play('lose');
+    showResult('lose');
+  }
+
+  /* ---------- 战果图：把最终布局画成一张横图 ---------- */
+  function roundRect(c, x, y, w, h, r){
+    if(c.roundRect){ c.beginPath(); c.roundRect(x, y, w, h, r); return; }
+    c.beginPath();
+    c.moveTo(x+r, y); c.lineTo(x+w-r, y); c.quadraticCurveTo(x+w, y, x+w, y+r);
+    c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r);
+    c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y);
+    c.closePath();
+  }
+  function savePoster(kind){
+    const W = 1200, H = 800;
+    const cv = document.createElement('canvas');
+    cv.width = W*2; cv.height = H*2;
+    const c = cv.getContext('2d');
+    c.scale(2, 2);
+
+    // 底色
+    const bg = c.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#241811'); bg.addColorStop(.55, '#170f0b'); bg.addColorStop(1, '#110b08');
+    c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    const glow = c.createRadialGradient(880, 60, 0, 880, 60, 620);
+    glow.addColorStop(0, 'rgba(224,169,92,.14)'); glow.addColorStop(1, 'rgba(224,169,92,0)');
+    c.fillStyle = glow; c.fillRect(0, 0, W, H);
+    const vig = c.createRadialGradient(W/2, H/2, H*0.3, W/2, H/2, H*0.95);
+    vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.55)');
+    c.fillStyle = vig; c.fillRect(0, 0, W, H);
+
+    // 木框 + 棋盘
+    const BX = 70, BY = 108, BW = 640;
+    const wood = c.createLinearGradient(BX, BY, BX+BW, BY+BW);
+    wood.addColorStop(0, '#6a4834'); wood.addColorStop(.5, '#402a1c'); wood.addColorStop(1, '#543724');
+    c.fillStyle = wood;
+    roundRect(c, BX, BY, BW, BW, 26); c.fill();
+    c.strokeStyle = 'rgba(255,226,196,.16)'; c.lineWidth = 1;
+    roundRect(c, BX+0.5, BY+0.5, BW-1, BW-1, 26); c.stroke();
+
+    const IP = 16;              // 框内边距
+    const IX = BX + IP, IY = BY + IP, IW = BW - IP*2;
+    c.fillStyle = '#1a110d';
+    roundRect(c, IX, IY, IW, IW, 16); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.6)'; c.lineWidth = 2;
+    roundRect(c, IX, IY, IW, IW, 16); c.stroke();
+
+    const pad = IW * 0.033, gap = IW * 0.026;
+    const cell = (IW - pad*2 - gap*3) / 4;
+
+    // 空格
+    for(let r=0;r<4;r++) for(let cc=0;cc<4;cc++){
+      const x = IX + pad + cc*(cell+gap), y = IY + pad + r*(cell+gap);
+      c.fillStyle = 'rgba(255,220,186,.055)';
+      roundRect(c, x, y, cell, cell, 8); c.fill();
+      c.fillStyle = 'rgba(0,0,0,.3)';
+      roundRect(c, x, y+cell-3, cell, 3, 0); c.fill();
+    }
+
+    // 牌
+    const dark = v => v >= 128;
+    tiles.forEach(t => {
+      const v = t.v;
+      const x = IX + pad + t.c*(cell+gap), y = IY + pad + t.r*(cell+gap);
+      const base = colorOf(v);
+      c.save();
+      c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 14; c.shadowOffsetY = 6;
+      const g = c.createLinearGradient(x, y, x, y+cell);
+      g.addColorStop(0, '#fff'); g.addColorStop(0.08, base);
+      g.addColorStop(1, base);
+      c.fillStyle = base;
+      roundRect(c, x, y, cell, cell, 9); c.fill();
+      c.restore();
+
+      // 釉面高光
+      const hi = c.createLinearGradient(x, y, x, y+cell*0.62);
+      hi.addColorStop(0, v >= 128 ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.42)');
+      hi.addColorStop(1, 'rgba(255,255,255,0)');
+      roundRect(c, x, y, cell, cell*0.62, 9); c.fillStyle = hi; c.fill();
+      c.strokeStyle = 'rgba(255,255,255,.16)'; c.lineWidth = 1;
+      roundRect(c, x+0.5, y+0.5, cell-1, cell-1, 9); c.stroke();
+
+      // 数字
+      const k = v < 10 ? .46 : v < 100 ? .40 : v < 1000 ? .315 : .285;
+      c.fillStyle = dark(v) ? '#fff4e5' : '#3c2b20';
+      c.font = '700 ' + Math.round(cell*k) + 'px "PingFang SC", "Helvetica Neue", sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String(v), x + cell/2, y + cell/2 - 1);
+    });
+
+    // 右侧文字
+    const RX = 772;
+    if('letterSpacing' in c) c.letterSpacing = '1.6px';
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.fillStyle = 'rgba(224,169,92,.9)';
+    c.font = '400 13px "Noto Sans SC", "PingFang SC", sans-serif';
+    c.fillText(kind === 'win' ? '达成 · 深青釉' : '终局 · 四面都推不动', RX, 190);
+    if('letterSpacing' in c) c.letterSpacing = '0px';
+
+    c.fillStyle = '#f8ecda';
+    c.font = '800 ' + (kind === 'win' ? 74 : 54) + 'px "Bricolage Grotesque", "PingFang SC", "Noto Sans SC", sans-serif';
+    c.fillText(kind === 'win' ? '1024' : '牌面卡住了', RX, 272);
+
+    c.fillStyle = '#9b8c80';
+    c.font = '400 13px "Noto Sans SC", "PingFang SC", sans-serif';
+    c.fillText('得分', RX, 332);
+
+    c.fillStyle = '#e0a95c';
+    c.font = '800 76px "Bricolage Grotesque", "PingFang SC", "Noto Sans SC", sans-serif';
+    c.fillText(score.toLocaleString(), RX, 412);
+
+    c.strokeStyle = 'rgba(240,222,198,.2)'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(RX, 450); c.lineTo(RX+356, 450); c.stroke();
+
+    const rows = [['最大牌', maxTile], ['步数', moves], ['连击', combo]];
+    rows.forEach((row, i) => {
+      const y = 488 + i*42;
+      c.fillStyle = '#9b8c80';
+      c.font = '400 15px "Noto Sans SC", "PingFang SC", sans-serif';
+      c.fillText(row[0], RX, y);
+      c.fillStyle = '#ecdcc8';
+      c.font = '600 20px "Bricolage Grotesque", "PingFang SC", sans-serif';
+      c.textAlign = 'right';
+      c.fillText(String(row[1]), RX+356, y);
+      c.textAlign = 'left';
+    });
+
+    // 页脚
+    const d = new Date();
+    const pad2 = n => String(n).padStart(2, '0');
+    c.fillStyle = '#7d6f66';
+    c.font = '400 12px "Noto Sans SC", "PingFang SC", sans-serif';
+    c.fillText('1024 陶片牌局 · ' + (kind === 'win' ? '炼成深青釉' : '这一局到此为止'), BX, BY+BW+30);
+    // 右栏落款
+    c.strokeStyle = 'rgba(240,222,198,.16)';
+    c.beginPath(); c.moveTo(RX, 640); c.lineTo(RX+356, 640); c.stroke();
+    c.fillStyle = '#7d6f66';
+    c.font = '400 12px "Noto Sans SC", "PingFang SC", sans-serif';
+    c.fillText('记录于 ' + d.getFullYear() + '.' + pad2(d.getMonth()+1) + '.' + pad2(d.getDate()) + '  ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()), RX, 668);
+
+    const stamp = d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + '-' + pad2(d.getHours()) + pad2(d.getMinutes());
+    cv.toBlob(blob => {
+      if(!blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '1024战果-' + stamp + '.png';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+    }, 'image/png');
+  }
+
+  /* ===================== 道具 ===================== */
+  function restore(snap){
+    tiles.forEach(t => t.el && t.el.remove());
+    tiles = [];
+    snap.tiles.forEach(s => {
+      const t = { id:s.id, v:s.v, r:s.r, c:s.c, dead:false };
+      tiles.push(t);
+      createEl(t);
+      t.el.style.animation = 'none';
+    });
+    score = snap.score; moves = snap.moves; combo = snap.combo; maxTile = snap.maxTile;
+    over = false; locked = false; queued = null;
+    hideOverlay();
+    updateHUD();
+  }
+
+  function useUndo(){
+    if(powers.undo <= 0 || locked || over || !history) return;
+    powers.undo--;
+    Sound.play('power');
+    const h = history;
+    history = null;
+    restore(h);
+  }
+
+  function useHammer(){
+    if(powers.hammer <= 0 || locked || over) return;
+    hammer = !hammer;
+    if(hammer) Sound.play('power');
+    updateHUD();
+  }
+
+  function useShuffle(){
+    if(powers.shuffle <= 0 || locked || over) return;
+    powers.shuffle--;
+    history = snapshot();
+    const pos = tiles.map(t => [t.r, t.c]);
+    for(let i=pos.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pos[i], pos[j]] = [pos[j], pos[i]];
+    }
+    tiles.forEach((t,i) => { t.r = pos[i][0]; t.c = pos[i][1]; place(t); });
+    Sound.play('power');
+    updateHUD();
+  }
+
+  function hitCell(e){
+    const el = e.target.closest ? e.target.closest('.tile') : null;
+    if(!el) return;
+    const t = tiles.find(x => x.el === el);
+    if(!t) return;
+    hammer = false;
+    powers.hammer--;
+    Sound.play('power');
+    burst(t.r, t.c, t.v);
+    const dying = t;
+    t.el.classList.add('dying');
+    setTimeout(() => {
+      dying.el && dying.el.remove();
+      tiles = tiles.filter(x => x !== dying);
+      maxTile = tiles.reduce((a,x) => Math.max(a, x.v), 2);
+      if(!hasMove()) addRandom(true);
+      updateHUD();
+      checkState();
+    }, 260);
+  }
+
+  /* ===================== 重开 ===================== */
+  function reset(){
+    tiles.forEach(t => t.el && t.el.remove());
+    tiles = [];
+    score = 0; moves = 0; combo = 0; maxTile = 2;
+    over = false; won = false; keepGoing = false;
+    locked = false; queued = null; history = null; hammer = false; counted = false;
+    powers.undo = 3; powers.hammer = 1; powers.shuffle = 1;
+    fxEl.innerHTML = '';
+    hideOverlay();
+    layout();
+    addRandom(false);
+    addRandom(false);
+    updateHUD();
+  }
+
+  /* ===================== 输入 ===================== */
+  const KEYMAP = {
+    ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down',
+    a:'left', d:'right', w:'up', s:'down', A:'left', D:'right', W:'up', S:'down'
+  };
+  window.addEventListener('keydown', e => {
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+    const dir = KEYMAP[e.key];
+    if(dir){
+      e.preventDefault();
+      if(locked && !over) { queued = dir; return; }
+      doMove(dir);
+      return;
+    }
+    if(e.key === 'z' || e.key === 'Z'){ e.preventDefault(); useUndo(); }
+  });
+
+  let down = null;
+  boardEl.addEventListener('pointerdown', e => {
+    if(hammer){ return; }
+    down = { x:e.clientX, y:e.clientY, t:Date.now() };
+  });
+  boardEl.addEventListener('pointerup', e => {
+    if(hammer){ hitCell(e); down = null; return; }
+    if(!down) return;
+    const dx = e.clientX - down.x, dy = e.clientY - down.y;
+    down = null;
+    if(Math.max(Math.abs(dx), Math.abs(dy)) < 26) return;
+    const dir = Math.abs(dx) > Math.abs(dy)
+      ? (dx > 0 ? 'right' : 'left')
+      : (dy > 0 ? 'down' : 'up');
+    if(locked && !over){ queued = dir; return; }
+    doMove(dir);
+  });
+  boardEl.addEventListener('pointercancel', () => { down = null; });
+
+  $('p-undo').addEventListener('click', useUndo);
+  $('p-hammer').addEventListener('click', useHammer);
+  $('p-shuffle').addEventListener('click', useShuffle);
+  $('restart').addEventListener('click', reset);
+
+  const muteBtn = $('mute');
+  muteBtn.setAttribute('aria-checked', String(!Sound.isMuted()));
+  muteBtn.addEventListener('click', () => {
+    Sound.setMuted(!Sound.isMuted());
+    muteBtn.setAttribute('aria-checked', String(!Sound.isMuted()));
+    if(!Sound.isMuted()) Sound.play('spawn');
+  });
+
+  /* ===================== 启动 ===================== */
+  for(let i=0;i<S*S;i++){
+    const c = document.createElement('div');
+    c.className = 'cell';
+    cellsEl.appendChild(c);
+  }
+  window.addEventListener('resize', () => { layout(); });
+  if(window.ResizeObserver){
+    new ResizeObserver(() => layout()).observe(boardEl);
+  }
+  layout();
+  addRandom(false);
+  addRandom(false);
+  updateHUD();
+})();
+</script>
+<script src="../playclock/playclock.js"></script>
+<script src="../limit/limit.js" data-game="1024"></script>
+</body>
+</html>

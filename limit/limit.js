@@ -29,7 +29,11 @@
         pvz: { name: "草坪守卫战" },
         "twenty-four": { name: "24 点" },
         poem: { name: "唐诗小状元" },
-        plane: { name: "穿云战机" }
+        plane: { name: "穿云战机" },
+        racing: { name: "霓虹狂飙" },
+        "zombie-defense": { name: "钢铁防线" },
+        english: { name: "英语小勇士" },
+        "1024": { name: "1024 陶片牌局" }
     };
 
     var script = document.currentScript;

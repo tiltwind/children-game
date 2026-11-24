@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>霓虹狂飙 · NEON RUSH</title>
+    <link rel="stylesheet" href="racing.css">
+    <!-- 局间门禁 -->
+    <link rel="stylesheet" href="../gate/gate.css">
+    <link rel="stylesheet" href="../gate/challenges.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <a class="back-link" href="../index.html">← 返回首页</a>
+            <span class="brand">SHUTU GAME · NO.08 · NEON RUSH</span>
+        </header>
+
+        <div class="frame" id="frame">
+            <canvas id="game" width="1280" height="720" aria-label="霓虹狂飙赛车游戏画面"></canvas>
+            <div class="scanlines" aria-hidden="true"></div>
+
+            <div class="hud" id="hud" aria-hidden="true">
+                <div class="hud-tl">
+                    <div class="score-row">
+                        <span class="hud-label">SCORE</span>
+                        <span class="score-val" id="hudScore">000000</span>
+                    </div>
+                    <div class="sub-row">
+                        <span id="hudBest">BEST 000000</span>
+                        <span class="sep">·</span>
+                        <span id="hudCoins">★ 0</span>
+                    </div>
+                    <div class="combo-chip" id="hudCombo">
+                        <span>擦身连击</span><b id="hudComboNum">×2</b>
+                    </div>
+                </div>
+
+                <div class="hud-tc">
+                    <div class="level-name" id="hudLevel">热身赛 · 城市霓虹</div>
+                    <div class="level-bar">
+                        <i class="level-fill" id="levelFill"></i>
+                        <i class="level-mark" id="levelMark"></i>
+                    </div>
+                    <div class="level-meta">
+                        <span id="hudDist">0 / 0 m</span>
+                        <span id="hudTime">0.0s</span>
+                    </div>
+                </div>
+
+                <div class="hud-tr">
+                    <div class="hearts" id="hearts"></div>
+                    <button type="button" class="icon-btn" id="soundBtn" title="音效开关">♪</button>
+                    <button type="button" class="icon-btn" id="pauseBtn" title="暂停">❚❚</button>
+                </div>
+
+                <div class="hud-speed">
+                    <div class="speed-block">
+                        <span class="speed-val" id="hudSpeed">0</span>
+                        <span class="speed-unit">KM/H</span>
+                    </div>
+                    <div class="nitro-block">
+                        <div class="nitro-head" id="nitroHead">
+                            <span>氮气 · SPACE</span>
+                            <span id="nitroPct">0%</span>
+                        </div>
+                        <div class="nitro-bar">
+                            <i class="nitro-fill" id="nitroFill"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="drift-tag" id="driftTag">DRIFT · 漂移加分</div>
+            </div>
+
+            <!-- 主菜单 -->
+            <div class="overlay" id="menuOv">
+                <div class="panel menu-panel">
+                    <div class="menu-head">
+                        <div>
+                            <p class="kicker">NEON RUSH · RACE 08</p>
+                            <h1 class="game-title">霓虹狂飙</h1>
+                        </div>
+                        <p class="lead">挑一条路面、一辆车，跑完六个赛段。躲路障、贴车擦身攒连击、吃星币、放氮气 —— 弯道会自己找上门。</p>
+                    </div>
+
+                    <div class="menu-grid">
+                        <section class="col">
+                            <div class="col-head">01 选择路面 <em>抓地 / 手感</em></div>
+                            <div class="col-body">
+                                <div class="surface-grid" id="surfaceGrid"></div>
+                                <p class="surface-meta" id="surfaceNote" style="margin-top:10px;line-height:1.65"></p>
+                            </div>
+                        </section>
+
+                        <section class="col">
+                            <div class="col-head">02 选择赛车 <em>极速 / 加速 / 操控 / 耐久</em></div>
+                            <div class="col-body">
+                                <div class="car-list" id="carList"></div>
+                            </div>
+                        </section>
+
+                        <section class="col">
+                            <div class="col-head">03 选择赛段 <em>六关递进</em></div>
+                            <div class="col-body">
+                                <div class="level-list" id="levelList"></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="menu-foot">
+                        <p class="menu-hint">
+                            <b>操作</b> <span class="keys-inline">← → / A D</span> 转向 · <span class="keys-inline">↑</span> 加速 · <span class="keys-inline">↓</span> 刹车 · <span class="keys-inline">SPACE</span> 氮气 · <span class="keys-inline">P</span> 暂停<br>
+                            <b>玩法</b> 贴车擦身叠连击，漂移也会加分；每玩 5 分钟会弹出答题门禁，答对才能继续。
+                        </p>
+                        <div class="menu-foot-right">
+                            <div class="menu-best">总最佳<b id="menuBest">0</b></div>
+                            <button class="cta" id="startBtn"><span>开 赛</span><em>ENTER</em></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 暂停 -->
+            <div class="overlay" id="pauseOv" hidden>
+                <div class="panel small-panel">
+                    <p class="kicker">PAUSED</p>
+                    <h2 class="small-title">赛道暂停</h2>
+                    <p class="small-text">按 P / Esc 或点击继续。回来后计时重新开始。</p>
+                    <div class="small-actions">
+                        <button class="cta is-compact" id="resumeBtn">继续比赛</button>
+                        <button class="ghost" id="pauseRestartBtn">重跑本关</button>
+                        <button class="ghost" id="pauseMenuBtn">回菜单</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 单关结算 -->
+            <div class="overlay" id="resultOv" hidden>
+                <div class="panel result-panel">
+                    <p class="result-kicker" id="resultKicker">STAGE CLEAR</p>
+                    <h2 class="result-title" id="resultTitle">赛段完成</h2>
+                    <div class="stars" id="resultStars">
+                        <span>★</span><span>★</span><span>★</span>
+                    </div>
+                    <p class="star-note" id="starNote">2★ 8000 分 · 3★ 9200 分</p>
+                    <div class="result-stats">
+                        <div><span>得分</span><b id="resScore">0</b></div>
+                        <div><span>用时</span><b id="resTime">0s</b></div>
+                        <div><span>星币</span><b id="resCoins">0</b></div>
+                        <div><span>擦身峰值</span><b id="resCombo">0</b></div>
+                    </div>
+                    <p class="result-record" id="resRecord" hidden>✦ 刷新了本关最佳</p>
+                    <div class="result-actions">
+                        <button class="cta" id="nextBtn"><span>下一关</span><em>ENTER</em></button>
+                        <button class="ghost" id="retryBtn">重跑本关</button>
+                        <button class="ghost" id="resultMenuBtn">回菜单</button>
+                    </div>
+                    <p class="result-hint" id="resHint"></p>
+                </div>
+            </div>
+
+            <!-- 全军覆没 -->
+            <div class="overlay" id="crashOv" hidden>
+                <div class="panel result-panel">
+                    <p class="result-kicker" id="crashKicker">VEHICLE DOWN</p>
+                    <h2 class="result-title" id="crashTitle">赛车报废了</h2>
+                    <p class="small-text" id="crashText"></p>
+                    <div class="result-stats">
+                        <div><span>跑了</span><b id="crashDist">0 m</b></div>
+                        <div><span>得分</span><b id="crashScore">0</b></div>
+                        <div><span>星币</span><b id="crashCoins">0</b></div>
+                        <div><span>擦身峰值</span><b id="crashCombo">0</b></div>
+                    </div>
+                    <div class="result-actions">
+                        <button class="cta" id="crashRetryBtn"><span>再来一次</span><em>ENTER</em></button>
+                        <button class="ghost" id="crashMenuBtn">回菜单</button>
+                    </div>
+                    <p class="result-hint" id="crashHint"></p>
+                </div>
+            </div>
+
+            <!-- 全通关 -->
+            <div class="overlay" id="cupOv" hidden>
+                <div class="panel cup-panel">
+                    <p class="result-kicker">CHAMPION · 全部赛段完成</p>
+                    <h2 class="result-title" style="font-size:36px;margin-top:8px">霓虹冠军</h2>
+                    <div class="stars" id="cupStars"><span>★</span><span>★</span><span>★</span></div>
+                    <p class="star-note" id="cupNote">六个赛段全部通过</p>
+                    <div class="result-stats">
+                        <div><span>总星数</span><b id="cupStarCount">0 / 18</b></div>
+                        <div><span>累计得分</span><b id="cupScore">0</b></div>
+                        <div><span>最佳单关</span><b id="cupBest">0</b></div>
+                        <div><span>使用赛车</span><b id="cupCar">疾风 GT</b></div>
+                    </div>
+                    <div class="result-actions">
+                        <button class="cta" id="cupAgainBtn"><span>从头再飙</span></button>
+                        <button class="ghost" id="cupMenuBtn">回菜单</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="touch-nitro" id="nitroBtn">氮气</button>
+        </div>
+
+        <p class="footnote">提示：贴着障碍擦过去能叠连击倍率，连续漂移也能加分；氮气满了按 SPACE，撞击路障不心疼。</p>
+        <p class="rotate-hint">↻ 建议横屏游玩，弯道更宽</p>
+    </div>
+
+    <!-- 局间门禁：口算填空 + 唐诗 -->
+    <script src="../gate/gate.js"></script>
+    <script src="../gate/challenges/quick-math.js"></script>
+    <script src="../poem/poem-data.js"></script>
+    <script src="../gate/challenges/poem.js"></script>
+    <script src="../english/english-data.js"></script>
+    <script src="../gate/challenges/english.js"></script>
+    <script src="../limit/limit.js" data-game="racing"></script>
+    <script src="racing.js"></script>
+    <script src="../playclock/playclock.js"></script>
+</body>
+</html>

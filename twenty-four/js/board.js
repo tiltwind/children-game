@@ -45,6 +45,9 @@
     root.tabIndex = -1;
     root.innerHTML =
       '<div class="tf24-tiles" role="group" aria-label="牌面"></div>' +
+      '<div class="tf24-frac-note" hidden>' +
+      "这题要用分数：中间可以出现像 8/3 这样的数，接着算就好" +
+      "</div>" +
       '<div class="tf24-ops" role="group" aria-label="运算符">' +
       OPS.map(function (o) {
         return (
@@ -56,6 +59,7 @@
       '<p class="tf24-status" role="status" aria-live="polite"></p>';
 
     this.tilesEl = root.querySelector(".tf24-tiles");
+    this.fracNoteEl = root.querySelector(".tf24-frac-note");
     this.opsEl = root.querySelector(".tf24-ops");
     this.statusEl = root.querySelector(".tf24-status");
     this.opEls = Array.prototype.slice.call(root.querySelectorAll(".tf24-op"));
@@ -117,10 +121,9 @@
     this.tiles = puzzle.numbers.map(function (n, i) {
       return { id: i, value: TF24.F(n, 1), tree: { num: n } };
     });
-    this.message = {
-      text: "点两张牌，再选一个运算符，顺序豆豆来排～",
-      tone: "idle"
-    };
+    this.message = this.allowFraction
+      ? { text: "这题需要分数：中间可以出现 8/3 这样的数，接着算就好～", tone: "hint" }
+      : { text: "点两张牌，再选一个运算符，顺序豆豆来排～", tone: "idle" };
     this.render();
     this.root.focus({ preventScroll: true });
   };
@@ -161,12 +164,19 @@
     if (this.selected.length === 2) {
       var a = this.tileById(this.selected[0]);
       var b = this.tileById(this.selected[1]);
-      this.message = {
-        text:
-          "已选 " + TF24.fText(a.value) + " 和 " + TF24.fText(b.value) +
-          "，再选一个运算符吧，顺序豆豆来排",
-        tone: "ready"
-      };
+      var picked = "已选 " + TF24.fText(a.value) + " 和 " + TF24.fText(b.value);
+      if (!this.allowFraction && !this._divisiblePair(a, b)) {
+        // 除不尽的这一对不能做除法，先把话说清楚，不让点空
+        this.message = {
+          text: picked + "，这两个数除不尽，不能做除法；可以用 + − ×，或者换一对牌。",
+          tone: "ready"
+        };
+      } else {
+        this.message = {
+          text: picked + "，再选一个运算符吧，顺序豆豆来排",
+          tone: "ready"
+        };
+      }
     } else if (this.selected.length === 1) {
       var one = this.tileById(this.selected[0]);
       this.message = { text: "已选 " + TF24.fText(one.value) + "，再点一张牌", tone: "idle" };
@@ -174,6 +184,25 @@
       this.message = { text: "点两张牌，再选一个运算符，顺序豆豆来排～", tone: "idle" };
     }
     this.render();
+  };
+
+  // 这一对牌是否能整除（不含分数中间结果）
+  Board.prototype._divisiblePair = function (a, b) {
+    if (!a || !b) return false;
+    var q1 = TF24.fDiv(a.value, b.value);
+    var q2 = TF24.fDiv(b.value, a.value);
+    return (!!q1 && q1.d === 1) || (!!q2 && q2.d === 1);
+  };
+
+  // 被拦下时抖一下对应的运算符按钮，让「不能做」看得见
+  Board.prototype._shakeOp = function (op) {
+    this.opEls.forEach(function (el) {
+      if (el.getAttribute("data-op") !== op) return;
+      el.classList.remove("is-shake");
+      void el.offsetWidth;
+      el.classList.add("is-shake");
+      setTimeout(function () { el.classList.remove("is-shake"); }, 420);
+    });
   };
 
   Board.prototype.applyOp = function (op) {
@@ -227,11 +256,12 @@
       } else if (!this.allowFraction) {
         this.message = {
           text:
-            TF24.fText(a.value) + " 和 " + TF24.fText(b.value) +
-            " 除不尽。换一对牌，或者试试加、减、乘。",
+            "这一步不能做：" + TF24.fText(a.value) + " ÷ " + TF24.fText(b.value) +
+            " 除不尽（不是整数）。换一对牌，或者用 + − ×。",
           tone: "bad"
         };
         this.render();
+        this._shakeOp("/");
         return;
       } else {
         // 这题本身必须用分数，仍按大数在前，顺序不用用户操心
@@ -320,7 +350,9 @@
    */
   Board.prototype.submitExpression = function (text) {
     if (this.solved) return { ok: false, error: "这题已经解出来了" };
-    var res = TF24.checkExpression(text, this.puzzle.numbers, this.target);
+    var res = TF24.checkExpression(text, this.puzzle.numbers, this.target, {
+      allowFraction: this.allowFraction
+    });
     if (res.ok) {
       this.tiles = [{ id: 0, value: TF24.F(this.target, 1), tree: res.tree, merged: true }];
       this._succeed(res.expression, "typed");
@@ -388,10 +420,28 @@
       .join("");
 
     var ready = selected.length === 2 && !this.solved;
+    var pairA = ready ? this.tileById(selected[0]) : null;
+    var pairB = ready ? this.tileById(selected[1]) : null;
+    // 不需要分数的题：除不尽就禁用「÷」，不留一个点了没反应的按钮
+    var divBlocked = !!(ready && !this.allowFraction && !this._divisiblePair(pairA, pairB));
+
     this.opEls.forEach(function (el) {
-      el.disabled = !ready;
+      var isDiv = el.getAttribute("data-op") === "/";
+      el.disabled = !ready || (isDiv && divBlocked);
+      if (isDiv) {
+        if (divBlocked) {
+          el.setAttribute("data-blocked", "1");
+          el.setAttribute("title", "这两个数除不尽，这一步不能做");
+          el.setAttribute("aria-label", "除（这两个数除不尽，不能做）");
+        } else {
+          el.removeAttribute("data-blocked");
+          el.removeAttribute("title");
+          el.setAttribute("aria-label", "除");
+        }
+      }
     });
     this.opsEl.classList.toggle("is-ready", ready);
+    if (this.fracNoteEl) this.fracNoteEl.hidden = !this.allowFraction;
 
     this.statusEl.textContent = this.message.text;
     this.statusEl.setAttribute(
