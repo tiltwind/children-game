@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>碧海扬帆 · SAIL AWAY</title>
+    <link rel="stylesheet" href="sailing.css">
+    <link rel="stylesheet" href="../gate/gate.css">
+    <link rel="stylesheet" href="../gate/challenges.css">
+    <link rel="stylesheet" href="../playclock/playclock.css">
+    <link rel="stylesheet" href="../limit/limit.css">
+</head>
+<body>
+<div class="page">
+    <header class="topbar">
+        <a class="back-link" href="../index.html">← 返回首页</a>
+        <span class="brand">SHUTU GAME · NO.12 · SAIL AWAY</span>
+    </header>
+
+    <div class="frame">
+        <canvas id="game" width="1280" height="720" aria-label="碧海扬帆帆船游戏画面"></canvas>
+
+        <div class="hud" id="hud" hidden>
+            <div class="hud-left">
+                <div class="level-line">
+                    <b id="hudLevel">1 · 启航课</b>
+                    <span id="hudSub">顺风直航</span>
+                </div>
+                <div class="stat-row">
+                    <div class="stat">
+                        <label>用时</label>
+                        <b id="hudTime">00:00.0</b>
+                    </div>
+                    <div class="stat">
+                        <label>剩余</label>
+                        <b id="hudDist">0</b>
+                    </div>
+                </div>
+                <div class="speed-big">
+                    <b id="hudSpeed">0.0</b><em>节</em>
+                </div>
+                <div class="tack-chip" id="tackChip">直航</div>
+            </div>
+
+            <div class="hud-right">
+                <div class="rose-box">
+                    <canvas id="rose" width="232" height="232"></canvas>
+                    <span id="windTxt">西风 13 节</span>
+                </div>
+                <div class="gauges">
+                    <div class="eff-ring" id="effRing">
+                        <span id="effNum">0%</span>
+                        <em>帆效</em>
+                    </div>
+                    <div class="heel-box">
+                        <div class="heel-head"><span>横倾</span><b id="heelNum">0°</b></div>
+                        <div class="heel-track"><i id="heelFill"></i></div>
+                    </div>
+                    <div class="crew-box">
+                        <span class="crew-label">人位</span>
+                        <div class="crew-dots">
+                            <i class="crew-dot"></i>
+                            <i class="crew-dot"></i>
+                            <i class="crew-dot"></i>
+                            <i class="crew-dot"></i>
+                            <i class="crew-dot"></i>
+                        </div>
+                        <em class="crew-hint">W 前 · S 后</em>
+                    </div>
+                </div>
+                <div class="rival-row" id="rivalRow" hidden>对手距终点 <b id="rivalTxt">0</b></div>
+            </div>
+
+            <div class="hint-bar" id="hintBar"></div>
+            <div class="toast-bar" id="toastBar"></div>
+            <div class="trim-chip" id="trimChip">完美配帆 +6%</div>
+            <!-- 调试读数：仅在 ?debug=1 时显示 -->
+            <pre class="dbg-out" id="dbgOut" hidden></pre>
+
+            <div class="tools">
+                <button type="button" class="tool-btn" id="sfxBtn" title="音效开关">🔊</button>
+                <button type="button" class="tool-btn" id="musicBtn" title="音乐开关">♪</button>
+                <button type="button" class="tool-btn is-text" id="assistBtn" title="最佳帆角提示">提示开</button>
+                <button type="button" class="tool-btn" id="pauseBtn" title="暂停">❚❚</button>
+            </div>
+
+            <div class="touch-pad">
+                <button type="button" class="pad-btn" id="crewFwd">人前 ▲</button>
+                <button type="button" class="pad-btn" id="crewAft">人后 ▼</button>
+                <button type="button" class="pad-btn is-primary" id="tackBtn">抢风 T</button>
+            </div>
+        </div>
+
+        <!-- 主菜单 -->
+        <div class="overlay" id="menuOv">
+            <div class="panel menu-panel">
+                <div class="menu-head">
+                    <div>
+                        <p class="kicker">SAIL AWAY · 帆船 08 关</p>
+                        <h1 class="game-title">碧海扬帆</h1>
+                    </div>
+                    <p class="lead">风从哪来、帆摆多少、人站船头还是船尾 —— 三件事凑齐，船才跑得快。八段航程，从顺风直航一路考到阵风和决赛对手。</p>
+                </div>
+
+                <div class="menu-body">
+                    <div class="level-grid" id="levelGrid"></div>
+
+                    <aside class="menu-side">
+                        <div class="side-card">
+                            <h3>操作</h3>
+                            <ul class="key-list">
+                                <li><b>拖动画面</b><span>帆杆跟着指针走</span></li>
+                                <li><b>← →</b><span>微调帆角</span></li>
+                                <li><b>W / S</b><span>人往前 / 往后</span></li>
+                                <li><b>T</b><span>抢风换舷</span></li>
+                                <li><b>P / Esc</b><span>暂停</span></li>
+                            </ul>
+                        </div>
+                        <div class="side-card is-accent">
+                            <h3>三个关键</h3>
+                            <p><b>横风最快。</b>帆收到 50° 上下最有劲，顺风反而慢。</p>
+                            <p><b>顶风不动。</b>目标在死区里就按 T 抢风，走斜线。</p>
+                            <p><b>人位是配平。</b>船头快但容易被吹翻，船尾稳适合大风。</p>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="menu-foot">
+                    <div class="menu-stars">总星数 <b id="menuStars">0 / 24</b></div>
+                    <button type="button" class="cta" id="menuStart"><span>开始航行</span><em>ENTER</em></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 暂停 -->
+        <div class="overlay" id="pauseOv" hidden>
+            <div class="panel small-panel">
+                <p class="kicker">PAUSED</p>
+                <h2 class="small-title">靠港歇一会儿</h2>
+                <p class="small-text">按 P / Esc 或点下面继续。回来以后计时接着走。</p>
+                <div class="actions">
+                    <button type="button" class="cta" id="resumeBtn">继续航行</button>
+                    <button type="button" class="ghost" id="pauseRestartBtn">重跑本关</button>
+                    <button type="button" class="ghost" id="pauseMenuBtn">回菜单</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 单关结算 -->
+        <div class="overlay" id="resultOv" hidden>
+            <div class="panel result-panel">
+                <p class="kicker" id="resKicker">STAGE CLEAR · 抵达终点</p>
+                <h2 class="result-title" id="resTitle">顺利抵达</h2>
+                <div class="stars" id="resStars"></div>
+                <p class="par-note">三星 <b id="resPar">00:00</b> · 二星 <b id="resPar2">00:00</b></p>
+                <div class="result-grid">
+                    <div><span>用时</span><b id="resTime">00:00</b></div>
+                    <div><span>撞礁</span><b id="resBump">0 次</b></div>
+                </div>
+                <p class="record" id="resRecord" hidden>✦ 刷新了本关最佳</p>
+                <p class="res-hint" id="resHint"></p>
+                <div class="actions">
+                    <button type="button" class="cta" id="nextBtn">下一关</button>
+                    <button type="button" class="ghost" id="retryBtn">重跑本关</button>
+                    <button type="button" class="ghost" id="resultMenuBtn">回菜单</button>
+                </div>
+                <p class="all-done" id="resAllDone" hidden>全部关卡都跑完了 · <button type="button" class="link" id="allDoneBtn">看总成绩 →</button></p>
+            </div>
+        </div>
+
+        <!-- 全部通关 -->
+        <div class="overlay" id="cupOv" hidden>
+            <div class="panel result-panel cup-panel">
+                <p class="kicker">ALL CLEAR · 八段航程完成</p>
+                <h2 class="result-title">海上老船长</h2>
+                <p class="cup-stars" id="cupStars">0 / 24</p>
+                <p class="par-note">最佳时间合计 <b id="cupTime">00:00</b></p>
+                <div class="actions">
+                    <button type="button" class="cta" id="cupAgainBtn">从头再航</button>
+                    <button type="button" class="ghost" id="cupMenuBtn">回菜单</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="footnote">
+        提示：拖动画面就是转帆 —— 帆效环越接近 100% 越有劲；被阵风压得横倾条变红时，按 S 往船尾坐，同时把帆偏离最佳角卸力。
+    </p>
+    <p class="rotate-hint">↻ 建议横屏游玩，海图更开阔</p>
+</div>
+
+<!-- 局间门禁：口算 + 唐诗 -->
+<script src="../gate/gate.js"></script>
+<script src="../gate/challenges/quick-math.js"></script>
+<script src="../poem/poem-data.js"></script>
+<script src="../gate/challenges/poem.js"></script>
+<script src="../limit/limit.js" data-game="sailing"></script>
+<script src="config.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+<script src="../playclock/playclock.js"></script>
+</body>
+</html>

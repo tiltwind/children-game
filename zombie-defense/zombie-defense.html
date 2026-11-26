@@ -32,8 +32,8 @@ html,body{height:100%;overflow:hidden;background:#05080b;font-family:"Noto Sans 
 }
 
 /* ========== 顶部 HUD ========== */
-.hud{position:absolute;left:0;top:0;width:100%;height:118px;pointer-events:none;
-  background:linear-gradient(180deg,rgba(5,9,13,.94) 0%,rgba(5,9,13,.72) 62%,rgba(5,9,13,0) 100%)}
+.hud{position:absolute;left:0;top:0;width:100%;height:152px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(5,9,13,.97) 0%,rgba(5,9,13,.88) 42%,rgba(5,9,13,.42) 74%,rgba(5,9,13,0) 100%)}
 .hud-lv{position:absolute;left:22px;top:14px;display:flex;align-items:center;gap:12px}
 .lv-badge{width:52px;height:52px;border:1px solid rgba(255,181,69,.6);display:grid;place-items:center;
   font-family:"Barlow Condensed",sans-serif;font-size:30px;font-weight:700;color:var(--amber);
@@ -68,6 +68,22 @@ html,body{height:100%;overflow:hidden;background:#05080b;font-family:"Noto Sans 
 .icon-btn:hover{border-color:var(--amber);color:var(--amber)}
 .icon-btn.on{border-color:var(--amber);color:var(--amber);background:rgba(255,181,69,.12)}
 
+/* ========== 战术道具栏 ========== */
+.slow-chip{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:1.4px;color:#9fc4d2;
+  border:1px solid rgba(127,227,255,.2);background:rgba(127,227,255,.07);padding:2px 8px}
+.slow-chip b{font-family:"Barlow Condensed",sans-serif;font-size:14px;color:#7fe3ff;font-weight:700}
+.tools{display:flex;gap:6px;pointer-events:auto}
+.tool{position:relative;height:32px;padding:0 30px 0 9px;border:1px solid rgba(140,165,180,.3);
+  background:rgba(9,14,19,.97);color:#c7d8e2;font-family:inherit;font-size:11.5px;box-shadow:0 2px 10px rgba(0,0,0,.45);letter-spacing:1px;
+  cursor:pointer;display:flex;align-items:center;gap:6px;transition:.15s;white-space:nowrap}
+.tool .t-ico{width:14px;height:14px;display:grid;place-items:center;color:var(--amber);flex:0 0 14px}
+.tool .t-badge{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  font-family:"Barlow Condensed",sans-serif;font-size:14px;font-weight:700;color:#7fe3ff}
+.tool:hover{border-color:var(--amber);color:#fff}
+.tool.on{border-color:var(--amber);background:rgba(255,181,69,.16);box-shadow:0 0 16px rgba(255,181,69,.3);color:#fff}
+.tool.no{opacity:.4;cursor:not-allowed}
+.tool.no .t-badge{color:#ff7a5c}
+
 /* ========== 底部士兵栏 ========== */
 .dock{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:12px;align-items:flex-end}
 .card{position:relative;width:154px;height:98px;border:1px solid rgba(140,165,180,.28);
@@ -92,6 +108,15 @@ html,body{height:100%;overflow:hidden;background:#05080b;font-family:"Noto Sans 
   letter-spacing:1px;white-space:nowrap;transition:opacity .4s;pointer-events:none}
 .hint b{color:var(--amber)}
 
+/* ========== 防线崩塌提示 ========== */
+.breach-banner{position:absolute;left:50%;bottom:150px;transform:translateX(-50%);z-index:4;
+  padding:7px 20px;font-size:13.5px;letter-spacing:2px;color:#ffd8d0;white-space:nowrap;
+  background:linear-gradient(90deg,rgba(120,16,26,0),rgba(120,16,26,.88),rgba(120,16,26,0));
+  border-top:1px solid rgba(255,92,77,.45);border-bottom:1px solid rgba(255,92,77,.45);
+  opacity:0;transition:opacity .25s;pointer-events:none;animation:breachPulse 1.4s ease-in-out infinite}
+.breach-banner.show{opacity:1}
+@keyframes breachPulse{0%,100%{color:#ffd8d0}50%{color:#ff8a76}}
+
 /* ========== BOSS 血条 ========== */
 .bossbar{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:520px;opacity:0;transition:opacity .3s;pointer-events:none}
 .bossbar.show{opacity:1}
@@ -114,8 +139,8 @@ html,body{height:100%;overflow:hidden;background:#05080b;font-family:"Noto Sans 
 .p-title .thin{font-weight:400;letter-spacing:2px;color:#8ea4b1;font-size:15px;display:block;margin-top:8px}
 .p-rule{height:1px;background:linear-gradient(90deg,rgba(255,181,69,.6),rgba(255,181,69,0));margin:18px 0 22px}
 
-.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.lcard{position:relative;height:170px;border:1px solid rgba(150,170,185,.22);cursor:pointer;overflow:hidden;
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.lcard{position:relative;height:158px;border:1px solid rgba(150,170,185,.22);cursor:pointer;overflow:hidden;
   background:#0a0f14;transition:transform .15s,border-color .15s,box-shadow .15s}
 .lcard:hover{transform:translateY(-5px);border-color:var(--amber);box-shadow:0 10px 28px rgba(0,0,0,.6)}
 .lcard .lc-bg{position:absolute;inset:0;opacity:.75}
@@ -162,6 +187,7 @@ body.in-menu #hint{opacity:0}
 <div id="stage">
  <div id="frame">
   <canvas id="cv"></canvas>
+  <div class="breach-banner" id="breachBanner">防线已被突破 · 死守内圈，别让僵尸走到最左端指挥所</div>
 
   <!-- ===== HUD ===== -->
   <div class="hud">
@@ -181,12 +207,24 @@ body.in-menu #hint{opacity:0}
 
     <div class="hud-right">
       <div class="hp-box">
-        <span class="hp-txt">基地护盾 <b class="num" id="hpNum">120</b></span>
+        <span class="hp-txt"><span id="hpLabel">防线耐久</span> <b class="num" id="hpNum">2600</b></span>
         <div class="hp-bar"><div class="hp-fill" id="hpFill"></div></div>
       </div>
+      <div class="slow-chip">僵尸减速 <b id="slowNum">0%</b></div>
       <div class="btns">
         <button class="icon-btn" id="btnPause" title="暂停"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4.6" height="18"/><rect x="14.4" y="3" width="4.6" height="18"/></svg></button>
         <button class="icon-btn" id="btnMute" title="音效 / 背景音乐"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h3l5 4V5L7 9z"/><path d="M16 9.5a4 4 0 0 1 0 5"/><path d="M18.5 7a7.5 7.5 0 0 1 0 10"/></svg></button>
+      </div>
+      <div class="tools" id="tools">
+        <button class="tool" id="toolPush" title="把防线向前推，推得越远僵尸越慢（消耗能量）">
+          <span class="t-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h11"/><path d="M11 7l5 5-5 5"/><path d="M19 4v16"/></svg></span>推进<span class="t-badge" id="pushBadge">3</span>
+        </button>
+        <button class="tool" id="toolSwap" title="消耗换防令，把同一位置的士兵换成当前选中的兵种">
+          <span class="t-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg></span>换防<span class="t-badge" id="swapBadge">3</span>
+        </button>
+        <button class="tool" id="toolRepair" title="消耗修墙包，立刻修复 22% 防线耐久">
+          <span class="t-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>修墙<span class="t-badge" id="repairBadge">3</span>
+        </button>
       </div>
     </div>
 
@@ -194,23 +232,23 @@ body.in-menu #hint{opacity:0}
       <div class="bs-label"><span>尸王 · ABOMINATION</span><span class="num" id="bossHpTxt">0%</span></div>
       <div class="bs-track"><div class="bs-fill" id="bossFill"></div></div>
     </div>
-    <div class="toast" id="toast">基地护盾受损！</div>
+    <div class="toast" id="toast">防线正在被啃咬！</div>
   </div>
 
   <!-- ===== 士兵栏 ===== -->
   <div class="dock" id="dock"></div>
-  <div class="hint" id="hint">选一个士兵 → 点击赛道投放，士兵自动开火</div>
+  <div class="hint" id="hint">选一个士兵 → 点击赛道投放在防线内侧，士兵自动朝外开火</div>
 
   <!-- ===== 标题 / 选关 ===== -->
   <div class="overlay show" id="menu">
     <div class="panel">
-      <div class="p-title">钢铁防线<span class="thin">SOLDIERS VS ZOMBIES · 五个战场，一条防线</span></div>
+      <div class="p-title">钢铁防线<span class="thin">SOLDIERS VS ZOMBIES · 八个战场，一条防线</span></div>
       <div class="p-rule"></div>
       <div class="levels" id="levelGrid"></div>
       <div class="p-foot">
         <div class="tips">
-          点击底栏士兵 → 点击任意赛道投放，能量自动回充<br>
-          <span>手枪兵</span>便宜灵活 · <span>加特林兵</span>弹幕清小不点 · <span>重甲兵</span>肉墙抗线 · <span>坦克兵</span>炮弹溅射
+          枪手守在<span>防线内侧</span>，朝外开火保护防线；防线被打穿会崩塌，僵尸冲进内圈，<span>走到最左端指挥所才算失守</span><br>
+          <span>推进防线</span>消耗能量把防线前推，推得越远僵尸走得越慢 · <span>换防令</span>原地换兵 · <span>修墙包</span>抢修耐久
         </div>
         <button class="btn" id="btnStart">进入战场</button>
       </div>
@@ -226,7 +264,7 @@ body.in-menu #hint{opacity:0}
         <div class="res-cell"><div class="k">击杀</div><div class="v num" id="resKills">0</div></div>
         <div class="res-cell"><div class="k">得分</div><div class="v num" id="resScore">0</div></div>
         <div class="res-cell"><div class="k">存活士兵</div><div class="v num" id="resAlive">0</div></div>
-        <div class="res-cell"><div class="k">护盾剩余</div><div class="v num" id="resHp">0</div></div>
+        <div class="res-cell"><div class="k">防线剩余</div><div class="v num" id="resHp">0</div></div>
       </div>
       <div class="p-foot">
         <div class="tips" id="resTips"></div>
@@ -256,9 +294,14 @@ body.in-menu #hint{opacity:0}
    ========================================================= */
 const W = 1280, H = 720;
 const LANES = 5, LANE_TOP = 150, LANE_H = 92;
-const BASE_X = 152;            // 僵尸走到这里开始打基地
+const WALL_X0 = 760;           // 防线初始位置：枪手在它内侧（左侧），僵尸在它外侧（右侧）
+const WALL_STEP = 62;          // 每次推进的距离
+const WALL_STEP_MAX = 3;       // 一局最多推进三次
+const PUSH_COSTS = [70, 100, 130];   // 三次推进分别消耗的能量
+const SLOW_PER_PX = 0.0013;    // 推进距离每 1px，僵尸减速约 0.13%（三次共约 -24%）
 const SPAWN_X = 1195;          // 僵尸出生点（画面右端）
-const SLOTS = [182, 268, 354, 440]; // 每条赛道的四个投放位（纵深四排）
+const BREACH_LINE_X = 150;     // 失守线：防线崩塌后，僵尸走到这里（最左侧指挥所前沿）才算真的输
+const SLOTS = [200, 300, 400, 500, 590]; // 每条赛道五个投放位，全部在防线内侧（越靠右离墙越近）
 const LANE_Y = Array.from({length: LANES}, (_, i) => LANE_TOP + LANE_H * i + LANE_H / 2);
 
 const cv = document.getElementById('cv');
@@ -267,26 +310,29 @@ const DPR = Math.min(2, window.devicePixelRatio || 1);
 cv.width = W * DPR; cv.height = H * DPR;
 ctx.scale(DPR, DPR);
 
-/* ---------------- 士兵数据 ---------------- */
+/* ---------------- 士兵数据（全部守在防线内侧） ---------------- */
 const SOLDIERS = {
-  pistol: {key:'pistol', name:'手枪兵', en:'PISTOL', cost:30, hp:95, rate:0.34, dmg:12, range:620,
+  pistol: {key:'pistol', name:'手枪兵', en:'PISTOL', cost:30, hp:110, rate:0.34, dmg:20, range:900,
            accent:'#7fe3ff', desc:'便宜灵活，前中期主力'},
-  gatling:{key:'gatling', name:'加特林兵', en:'GATLING', cost:110, hp:130, rate:0.05, dmg:9, range:650,
+  gatling:{key:'gatling', name:'加特林兵', en:'GATLING', cost:110, hp:150, rate:0.05, dmg:14, range:900,
            accent:'#ffb845', desc:'高射速弹幕，专清小不点'},
-  heavy:  {key:'heavy', name:'重甲兵', en:'HEAVY', cost:150, hp:640, rate:0.60, dmg:30, pellets:4, range:400,
-           accent:'#ff7a5c', desc:'霰弹近防，肉墙抗线'},
-  tank:   {key:'tank', name:'坦克兵', en:'TANK', cost:240, hp:820, rate:1.7, dmg:115, range:700, splash:150,
+  heavy:  {key:'heavy', name:'重甲兵', en:'HEAVY', cost:150, hp:700, rate:0.58, dmg:52, pellets:4, range:780,
+           accent:'#ff7a5c', desc:'霰弹近防，扛住墙前血线'},
+  tank:   {key:'tank', name:'坦克兵', en:'TANK', cost:240, hp:900, rate:1.7, dmg:300, range:950, splash:160,
            accent:'#ffd166', desc:'炮弹溅射，成片杀伤'}
 };
 const ORDER = ['pistol','gatling','heavy','tank'];
 
-/* ---------------- 僵尸数据 ---------------- */
+/* ---------------- 僵尸数据（整体加强，新增暴君与喷毒） ---------------- */
 const ZOMBIES = {
-  tiny:  {name:'小不点', hp:88,  speed:80, dps:11,  size:0.72, score:15, color:'#4e6f42'},
-  walker:{name:'普通僵尸', hp:215, speed:62, dps:20, size:1.0,  score:25, color:'#43603c'},
-  runner:{name:'疾走僵尸', hp:155, speed:138, dps:16, size:0.98, score:30, color:'#5b7245'},
-  armor: {name:'重甲僵尸', hp:620, speed:48, dps:30, size:1.2,  score:60, color:'#3a5040'},
-  boss:  {name:'尸王', hp:5200, speed:40, dps:60, size:2.30, score:500, color:'#5a3a4a'}
+  tiny:   {name:'小不点',   hp:120,  speed:96,  dps:6, size:0.72, score:15,  color:'#4e6f42'},
+  walker: {name:'普通僵尸', hp:330,  speed:74,  dps:10, size:1.0,  score:25,  color:'#43603c'},
+  runner: {name:'疾走僵尸', hp:240,  speed:158, dps:8, size:0.98, score:30,  color:'#5b7245'},
+  armor:  {name:'重甲僵尸', hp:1050, speed:58,  dps:16, size:1.2,  score:60,  color:'#3a5040'},
+  brute:  {name:'暴君巨尸', hp:2600, speed:46,  dps:30, size:1.75, score:150, color:'#4a3b52'},
+  spitter:{name:'喷毒僵尸', hp:520,  speed:70,  dps:8,  size:1.0,  score:70,  color:'#4f6b3a',
+           ranged:300, spitDmg:28, spitCd:3.2},
+  boss:   {name:'尸王',     hp:12000, speed:50, dps:45, size:2.30, score:500, color:'#5a3a4a'}
 };
 
 /* ---------------- 场景主题 ---------------- */
@@ -300,54 +346,94 @@ const THEMES = {
   factory:   {sky:['#0e1712','#193022','#2f4a2c'], ground:['#1c2418','#0c100a'], accent:'#a6ff6b',
               neon:['#a6ff6b','#ffd166'], weather:'toxic', name:'生化工厂'},
   fortress:  {sky:['#1c0a11','#3b1320','#6b1e28'], ground:['#231016','#0e0609'], accent:'#ff7a4d',
-              neon:['#ff5c4d','#ffb545'], weather:'ember', name:'极夜要塞'}
+              neon:['#ff5c4d','#ffb545'], weather:'ember', name:'极夜要塞'},
+  metro:     {sky:['#05080d','#0c131b','#182533'], ground:['#131a22','#080c11'], accent:'#8fe0ff',
+              neon:['#8fe0ff','#ffd166','#ff5c4d'], weather:'dust', name:'地下隧道'},
+  swamp:     {sky:['#0a1410','#16301f','#2f5334'], ground:['#16241a','#080e0a'], accent:'#9dff70',
+              neon:['#9dff70','#c8ff9a'], weather:'toxic', name:'腐蚀沼泽'},
+  steel:     {sky:['#160c08','#3a1a0d','#7a3412'], ground:['#24150e','#0c0705'], accent:'#ffc266',
+              neon:['#ffb545','#ff6a2a'], weather:'ember', name:'熔钢绝境'}
 };
 
-/* ---------------- 关卡（场景即关卡） ---------------- */
+/* ---------------- 关卡（8 个战场，强度逐关爬升） ---------------- */
 const LEVELS = [
-  { id:1, name:'城市废墟', theme:'city', tag:'SECTOR 01', energy:180, rate:16, baseHp:130,
+  { id:1, name:'城市废墟', theme:'city', tag:'SECTOR 01', energy:420, rate:18, baseHp:4300, hpMul:1.00, spdMul:1.00,
     waves:[
-      {gap:8, groups:[{type:'tiny', count:10, span:10}]},
-      {gap:8, groups:[{type:'tiny', count:14, span:10},{type:'walker', count:3, span:5}]},
-      {gap:8, groups:[{type:'walker', count:8, span:9},{type:'tiny', count:14, span:9}]},
-      {gap:6, groups:[{type:'walker', count:10, span:10},{type:'tiny', count:16, span:8},{type:'armor', count:1, span:1}]}
+      {gap:8, groups:[{type:'tiny', count:12, span:10}]},
+      {gap:8, groups:[{type:'tiny', count:16, span:10},{type:'walker', count:4, span:6}]},
+      {gap:8, groups:[{type:'walker', count:10, span:9},{type:'tiny', count:16, span:9}]},
+      {gap:6, groups:[{type:'walker', count:12, span:10},{type:'tiny', count:20, span:8},{type:'armor', count:1, span:1}]}
     ]},
-  { id:2, name:'沙暴公路', theme:'desert', tag:'SECTOR 02', energy:200, rate:18, baseHp:150,
+  { id:2, name:'沙暴公路', theme:'desert', tag:'SECTOR 02', energy:460, rate:20, baseHp:4800, hpMul:1.12, spdMul:1.04,
     waves:[
-      {gap:9, groups:[{type:'tiny', count:16, span:9},{type:'walker', count:5, span:6}]},
-      {gap:9, groups:[{type:'walker', count:10, span:9},{type:'runner', count:6, span:6}]},
-      {gap:9, groups:[{type:'tiny', count:22, span:8},{type:'walker', count:10, span:9}]},
-      {gap:8, groups:[{type:'runner', count:10, span:7},{type:'armor', count:2, span:3},{type:'tiny', count:14, span:8}]},
-      {gap:6, groups:[{type:'walker', count:18, span:11},{type:'armor', count:3, span:4},{type:'runner', count:10, span:7},{type:'walker', count:12, span:5, lane:'rand', focus:true}]}
+      {gap:9, groups:[{type:'tiny', count:18, span:9},{type:'walker', count:6, span:6}]},
+      {gap:9, groups:[{type:'walker', count:12, span:9},{type:'runner', count:8, span:6},{type:'spitter', count:1, span:1}]},
+      {gap:9, groups:[{type:'tiny', count:24, span:8},{type:'walker', count:12, span:9},{type:'spitter', count:2, span:6}]},
+      {gap:8, groups:[{type:'runner', count:12, span:7},{type:'armor', count:2, span:3},{type:'tiny', count:16, span:8}]},
+      {gap:6, groups:[{type:'walker', count:20, span:11},{type:'armor', count:3, span:4},{type:'runner', count:12, span:7},{type:'spitter', count:3, span:6}]}
     ]},
-  { id:3, name:'极寒雪原', theme:'snow', tag:'SECTOR 03', energy:220, rate:20, baseHp:170,
+  { id:3, name:'极寒雪原', theme:'snow', tag:'SECTOR 03', energy:500, rate:22, baseHp:5300, hpMul:1.24, spdMul:1.07,
     waves:[
-      {gap:9, groups:[{type:'walker', count:12, span:9}]},
-      {gap:9, groups:[{type:'tiny', count:26, span:9},{type:'walker', count:6, span:6}]},
-      {gap:9, groups:[{type:'runner', count:12, span:7},{type:'armor', count:3, span:4}]},
-      {gap:9, groups:[{type:'walker', count:20, span:11},{type:'tiny', count:20, span:9},{type:'runner', count:12, span:5, lane:'rand', focus:true}]},
-      {gap:9, groups:[{type:'armor', count:5, span:6},{type:'runner', count:14, span:9}]},
-      {gap:6, groups:[{type:'walker', count:24, span:12},{type:'armor', count:4, span:5},{type:'tiny', count:22, span:9}]}
+      {gap:9, groups:[{type:'walker', count:14, span:9}]},
+      {gap:9, groups:[{type:'tiny', count:28, span:9},{type:'spitter', count:2, span:6},{type:'walker', count:8, span:6}]},
+      {gap:9, groups:[{type:'runner', count:14, span:7},{type:'armor', count:3, span:4},{type:'spitter', count:2, span:2}]},
+      {gap:9, groups:[{type:'brute', count:1, span:1},{type:'walker', count:20, span:11},{type:'tiny', count:20, span:9}]},
+      {gap:9, groups:[{type:'armor', count:5, span:6},{type:'runner', count:16, span:9},{type:'spitter', count:3, span:6}]},
+      {gap:6, groups:[{type:'walker', count:26, span:12},{type:'brute', count:2, span:8},{type:'armor', count:4, span:5}]}
     ]},
-  { id:4, name:'生化工厂', theme:'factory', tag:'SECTOR 04', energy:250, rate:22, baseHp:190,
+  { id:4, name:'生化工厂', theme:'factory', tag:'SECTOR 04', energy:540, rate:24, baseHp:5750, hpMul:1.38, spdMul:1.10,
     waves:[
-      {gap:9, groups:[{type:'tiny', count:30, span:8}]},
-      {gap:9, groups:[{type:'walker', count:18, span:10},{type:'runner', count:10, span:7}]},
-      {gap:9, groups:[{type:'armor', count:4, span:5},{type:'walker', count:16, span:10},{type:'armor', count:4, span:4, lane:'rand', focus:true}]},
-      {gap:9, groups:[{type:'runner', count:22, span:9},{type:'tiny', count:28, span:10}]},
-      {gap:9, groups:[{type:'armor', count:6, span:7},{type:'walker', count:22, span:12}]},
-      {gap:9, groups:[{type:'runner', count:24, span:10},{type:'armor', count:4, span:6},{type:'walker', count:16, span:6, lane:'rand', focus:true}]},
-      {gap:6, groups:[{type:'armor', count:7, span:8},{type:'walker', count:26, span:12},{type:'runner', count:16, span:9}]}
+      {gap:9, groups:[{type:'tiny', count:26, span:8},{type:'spitter', count:2, span:2}]},
+      {gap:9, groups:[{type:'walker', count:16, span:10},{type:'runner', count:12, span:7},{type:'spitter', count:3, span:7}]},
+      {gap:9, groups:[{type:'armor', count:4, span:5},{type:'brute', count:1, span:1},{type:'walker', count:18, span:10}]},
+      {gap:9, groups:[{type:'runner', count:20, span:9},{type:'tiny', count:26, span:10},{type:'spitter', count:3, span:5}]},
+      {gap:9, groups:[{type:'armor', count:6, span:7},{type:'walker', count:24, span:12},{type:'brute', count:2, span:8}]},
+      {gap:9, groups:[{type:'runner', count:22, span:10},{type:'armor', count:5, span:6},{type:'spitter', count:4, span:7}]},
+      {gap:6, groups:[{type:'brute', count:3, span:9},{type:'walker', count:28, span:12},{type:'runner', count:16, span:9},{type:'armor', count:5, span:5}]}
     ]},
-  { id:5, name:'极夜要塞', theme:'fortress', tag:'SECTOR 05 · FINAL', energy:290, rate:24, baseHp:210,
+  { id:5, name:'极夜要塞', theme:'fortress', tag:'SECTOR 05', energy:600, rate:26, baseHp:6900, hpMul:1.55, spdMul:1.13,
     waves:[
-      {gap:9, groups:[{type:'tiny', count:32, span:9},{type:'walker', count:10, span:7}]},
-      {gap:9, groups:[{type:'runner', count:20, span:9},{type:'walker', count:16, span:10}]},
-      {gap:9, groups:[{type:'armor', count:5, span:6},{type:'tiny', count:30, span:9}]},
-      {gap:9, groups:[{type:'walker', count:26, span:12},{type:'runner', count:18, span:9},{type:'armor', count:5, span:4, lane:'rand', focus:true}]},
-      {gap:9, groups:[{type:'armor', count:8, span:9},{type:'runner', count:20, span:10}]},
-      {gap:9, groups:[{type:'walker', count:30, span:12},{type:'armor', count:6, span:7},{type:'tiny', count:30, span:10},{type:'walker', count:18, span:7, lane:'rand', focus:true}]},
-      {gap:7, boss:true, groups:[{type:'boss', count:1, span:1},{type:'tiny', count:30, span:10},{type:'armor', count:5, span:8}]}
+      {gap:9, groups:[{type:'tiny', count:26, span:9},{type:'walker', count:10, span:7}]},
+      {gap:9, groups:[{type:'runner', count:18, span:9},{type:'walker', count:14, span:10},{type:'spitter', count:2, span:2}]},
+      {gap:9, groups:[{type:'armor', count:5, span:6},{type:'tiny', count:24, span:9},{type:'brute', count:1, span:1}]},
+      {gap:9, groups:[{type:'walker', count:22, span:12},{type:'runner', count:16, span:9},{type:'armor', count:5, span:4, lane:'rand', focus:true}]},
+      {gap:9, groups:[{type:'brute', count:2, span:8},{type:'armor', count:6, span:9},{type:'spitter', count:3, span:8}]},
+      {gap:9, groups:[{type:'walker', count:26, span:12},{type:'armor', count:5, span:7},{type:'tiny', count:24, span:10},{type:'runner', count:18, span:7, lane:'rand', focus:true}]},
+      {gap:7, boss:true, groups:[{type:'boss', count:1, span:1},{type:'brute', count:2, span:10},{type:'tiny', count:24, span:10},{type:'spitter', count:3, span:8}]}
+    ]},
+  { id:6, name:'地下隧道', theme:'metro', tag:'SECTOR 06', energy:620, rate:28, baseHp:7100, hpMul:1.70, spdMul:1.16,
+    waves:[
+      {gap:9, groups:[{type:'runner', count:18, span:9}]},
+      {gap:9, groups:[{type:'walker', count:16, span:10},{type:'spitter', count:3, span:6}]},
+      {gap:9, groups:[{type:'armor', count:5, span:7},{type:'tiny', count:24, span:9},{type:'brute', count:1, span:1}]},
+      {gap:9, groups:[{type:'runner', count:20, span:10},{type:'walker', count:18, span:12},{type:'armor', count:4, span:5}]},
+      {gap:9, groups:[{type:'brute', count:2, span:9},{type:'spitter', count:4, span:9},{type:'armor', count:6, span:10}]},
+      {gap:9, groups:[{type:'walker', count:26, span:12},{type:'runner', count:20, span:9},{type:'tiny', count:26, span:10},{type:'brute', count:2, span:8}]},
+      {gap:9, groups:[{type:'armor', count:8, span:11},{type:'runner', count:22, span:10},{type:'spitter', count:4, span:8}]},
+      {gap:6, groups:[{type:'brute', count:3, span:10},{type:'walker', count:28, span:12},{type:'armor', count:6, span:8},{type:'runner', count:18, span:8}]}
+    ]},
+  { id:7, name:'腐蚀沼泽', theme:'swamp', tag:'SECTOR 07', energy:660, rate:30, baseHp:8600, hpMul:1.85, spdMul:1.18,
+    waves:[
+      {gap:9, groups:[{type:'tiny', count:26, span:9},{type:'spitter', count:3, span:3}]},
+      {gap:9, groups:[{type:'walker', count:18, span:10},{type:'brute', count:1, span:1},{type:'spitter', count:3, span:5}]},
+      {gap:9, groups:[{type:'runner', count:20, span:9},{type:'armor', count:5, span:7}]},
+      {gap:9, groups:[{type:'brute', count:2, span:8},{type:'walker', count:20, span:12},{type:'spitter', count:3, span:9}]},
+      {gap:9, groups:[{type:'armor', count:8, span:10},{type:'tiny', count:28, span:10},{type:'runner', count:20, span:9}]},
+      {gap:9, groups:[{type:'brute', count:3, span:10},{type:'walker', count:25, span:12},{type:'armor', count:7, span:8}]},
+      {gap:9, groups:[{type:'runner', count:22, span:10},{type:'spitter', count:4, span:10},{type:'armor', count:8, span:9},{type:'brute', count:2, span:8}]},
+      {gap:6, boss:true, groups:[{type:'boss', count:1, span:1},{type:'brute', count:4, span:12},{type:'tiny', count:28, span:11},{type:'armor', count:8, span:9},{type:'spitter', count:4, span:9}]}
+    ]},
+  { id:8, name:'熔钢绝境', theme:'steel', tag:'SECTOR 08 · FINAL', energy:720, rate:34, baseHp:10400, hpMul:2.00, spdMul:1.22,
+    waves:[
+      {gap:9, groups:[{type:'walker', count:20, span:10},{type:'spitter', count:3, span:6}]},
+      {gap:9, groups:[{type:'runner', count:22, span:9},{type:'armor', count:5, span:8}]},
+      {gap:9, groups:[{type:'tiny', count:28, span:10},{type:'armor', count:7, span:9},{type:'spitter', count:4, span:10}]},
+      {gap:9, groups:[{type:'brute', count:3, span:10},{type:'walker', count:26, span:12},{type:'runner', count:22, span:10}]},
+      {gap:9, groups:[{type:'armor', count:9, span:11},{type:'spitter', count:4, span:10},{type:'brute', count:3, span:9}]},
+      {gap:9, groups:[{type:'walker', count:28, span:12},{type:'runner', count:26, span:10},{type:'tiny', count:32, span:11},{type:'armor', count:7, span:7}]},
+      {gap:9, groups:[{type:'brute', count:3, span:12},{type:'armor', count:9, span:10},{type:'spitter', count:4, span:9}]},
+      {gap:9, groups:[{type:'runner', count:28, span:11},{type:'armor', count:10, span:11},{type:'brute', count:4, span:10},{type:'walker', count:24, span:11}]},
+      {gap:6, boss:true, groups:[{type:'boss', count:1, span:1},{type:'brute', count:5, span:12},{type:'tiny', count:32, span:11},{type:'armor', count:8, span:10},{type:'spitter', count:4, span:10}]}
     ]}
 ];
 
@@ -361,7 +447,9 @@ const G = {
   t:0, shake:0, flash:0, whiteFlash:0, gatePaused:false,
   kills:0, score:0, sel:null, boss:null,
   waveNow:1, waveTotal:1, winTimer:0, loseTimer:0,
-  weather:[], uid:1, hoverLane:-1, time:0
+  weather:[], uid:1, hoverLane:-1, hoverSoldier:null, time:0,
+  wallX:WALL_X0, pushUsed:0, items:{swap:3, repair:3}, swapArmed:false, spits:[],
+  wallBroken:false
 };
 
 const rand  = (a, b) => a + Math.random() * (b - a);
@@ -435,7 +523,10 @@ const BGM_SCALES = {
   desert:   [0, 2, 5, 7, 9],
   snow:     [0, 2, 3, 7, 8],
   factory:  [0, 1, 4, 6, 7],
-  fortress: [0, 1, 3, 6, 8]
+  fortress: [0, 1, 3, 6, 8],
+  metro:    [0, 2, 4, 7, 9],
+  swamp:    [0, 1, 3, 5, 8],
+  steel:    [0, 1, 2, 5, 7]
 };
 
 function bgmNoiseBuffer(a){
@@ -560,7 +651,8 @@ function bgmStop(){
 }
 
 function bgmTheme(idx){
-  BGM.theme = ['city', 'desert', 'snow', 'factory', 'fortress'][idx] || 'city';
+  const key = (LEVELS[idx] && LEVELS[idx].theme) || 'city';
+  BGM.theme = key;
   BGM.baseBpm = 92 + idx * 5;
   BGM.bpm = BGM.baseBpm;
   BGM.boss = false;
@@ -617,16 +709,19 @@ function startLevel(idx){
   G.phase = 'playing';
   G.t = 0; G.time = 0;
   G.energy = lv.energy; G.baseHp = lv.baseHp; G.baseMax = lv.baseHp;
-  G.soldiers = []; G.zombies = []; G.bullets = []; G.parts = [];
+  G.soldiers = []; G.zombies = []; G.bullets = []; G.parts = []; G.spits = [];
+  G.wallX = WALL_X0; G.pushUsed = 0; G.items = {swap:3, repair:3}; G.swapArmed = false;
+  G.wallBroken = false;
   G.queue = buildSchedule(lv); G.qi = 0;
   G.kills = 0; G.score = 0; G.sel = null; G.boss = null;
   G.shake = 0; G.flash = 0; G.whiteFlash = 0;
   G.waveTotal = lv.waves.length; G.waveNow = 1;
-  G.winTimer = 0; G.loseTimer = 0; G.hoverLane = -1;
+  G.winTimer = 0; G.loseTimer = 0; G.hoverLane = -1; G.hoverSoldier = null;
   buildBackdrop(lv.theme);
   initWeather(lv.theme);
   buildDock();
   syncHUD();
+  syncTools();
   hideOv('menu'); hideOv('result'); hideOv('pause');
   document.getElementById('bossbar').classList.remove('show');
   document.getElementById('hint').style.opacity = 1;
@@ -663,18 +758,136 @@ function deploy(lane){
 }
 
 /* =========================================================
+   战术道具：推进防线 / 换防令 / 修墙包
+   ========================================================= */
+function pushLine(){
+  if(G.phase !== 'playing') return;
+  if(G.wallBroken){ toast('防线已经崩塌，没得推了'); return; }
+  if(G.pushUsed >= WALL_STEP_MAX){ toast('防线已经推到最前，不能再推了'); return; }
+  const cost = PUSH_COSTS[G.pushUsed];
+  if(G.energy < cost){ toast('能量不足，推进需要 ' + cost); return; }
+
+  G.energy -= cost;
+  G.pushUsed++;
+  const oldX = G.wallX;
+  G.wallX += WALL_STEP;
+
+  // 贴在墙前的僵尸被防线顶回去
+  for(const z of G.zombies){
+    if(z.dead) continue;
+    const frontX = G.wallX + 22 + z.size * 10;
+    if(z.x < frontX) z.x = frontX + rand(0, 16);
+  }
+  // 推进特效
+  for(let i = 0; i < LANES; i++){
+    for(let k = 0; k < 8; k++)
+      addPart({type:'spark', x:rand(oldX, G.wallX + 10), y:LANE_Y[i] + rand(-26, 26),
+               vx:rand(-40, 60), vy:rand(-40, 20), g:80, life:rand(0.2, 0.5), maxLife:0.5,
+               size:rand(1.5, 3.2), color:'#ffb545'});
+    addPart({type:'ring', x:G.wallX + 10, y:LANE_Y[i], life:0.4, maxLife:0.4, size:64, color:'#ffd166'});
+  }
+  G.shake = 9;
+  sfx('boom');
+  const pct = Math.round((1 - slowMul()) * 100);
+  toast('防线推进！僵尸减速 -' + pct + '%');
+  syncTools();
+  syncHUD();
+}
+
+function useRepair(){
+  if(G.phase !== 'playing') return;
+  if(G.wallBroken){ toast('防线已经崩塌，修墙包救不回来了'); return; }
+  if(G.items.repair <= 0){ toast('修墙包已经用完了'); return; }
+  if(G.baseHp >= G.baseMax){ toast('防线还完好，不需要修'); return; }
+  G.items.repair--;
+  G.baseHp = Math.min(G.baseMax, G.baseHp + G.baseMax * 0.22);
+  G.whiteFlash = 0.18;
+  for(let i = 0; i < LANES; i++)
+    addPart({type:'ring', x:G.wallX + 6, y:LANE_Y[i], life:0.5, maxLife:0.5, size:70, color:'#7fe3ff'});
+  sfx('deploy');
+  toast('抢修完成，防线耐久 +22%');
+  syncTools();
+  syncHUD();
+  syncUI();
+}
+
+function armSwap(){
+  if(G.phase !== 'playing') return;
+  if(G.items.swap <= 0){ toast('换防令已经用完了'); return; }
+  if(!G.sel){ toast('先在下面选一个想换上的兵种'); return; }
+  G.swapArmed = !G.swapArmed;
+  toast(G.swapArmed ? '换防已就绪：点击场上士兵，换成 ' + SOLDIERS[G.sel].name : '已取消换防');
+  syncTools();
+  syncDock();
+}
+
+function trySwap(lane, x){
+  if(!G.swapArmed) return false;
+  let target = null;
+  for(const s of G.soldiers){
+    if(s.lane !== lane || s.hp <= 0) continue;
+    if(Math.abs(s.x - x) < 38){ target = s; break; }
+  }
+  if(!target){
+    toast('这里没有可换的士兵，点在有士兵的位置上');
+    return true;
+  }
+  if(!G.sel){ toast('先在下面选一个想换上的兵种'); return true; }
+  const def = SOLDIERS[G.sel];
+  if(target.key === def.key){ toast('这个位置已经是' + def.name + '了'); return true; }
+
+  G.items.swap--;
+  G.swapArmed = false;
+  target.key = def.key;
+  target.def = def;
+  target.hp = def.hp; target.maxHp = def.hp;
+  target.cd = 0.15; target.spin = 0; target.recoil = 0;
+  target.born = 0.6; target.flash = 1;
+  ringParticles(target.x, target.y);
+  sfx('deploy');
+  toast('换防完成：' + def.name + ' 已就位');
+  syncTools();
+  syncDock();
+  syncHUD();
+  return true;
+}
+
+function syncTools(){
+  const remainPush = WALL_STEP_MAX - G.pushUsed;
+  const cost = PUSH_COSTS[Math.min(G.pushUsed, PUSH_COSTS.length - 1)];
+  const push = document.getElementById('toolPush');
+  const sw = document.getElementById('toolSwap');
+  const rp = document.getElementById('toolRepair');
+  if(!push || !sw || !rp) return;
+  document.getElementById('pushBadge').textContent = remainPush > 0 ? cost : '0';
+  document.getElementById('swapBadge').textContent = G.items.swap;
+  document.getElementById('repairBadge').textContent = G.items.repair;
+  push.classList.toggle('no', G.wallBroken || remainPush <= 0 || G.energy < cost);
+  push.classList.toggle('on', false);
+  sw.classList.toggle('no', G.items.swap <= 0);
+  sw.classList.toggle('on', G.swapArmed);
+  rp.classList.toggle('no', G.wallBroken || G.items.repair <= 0 || G.baseHp >= G.baseMax);
+}
+
+/* =========================================================
    僵尸
    ========================================================= */
 function spawnZombie(ev){
   const def = ZOMBIES[ev.type];
   const isBoss = ev.type === 'boss';
   if(isBoss) ev.lane = 2;   // 尸王只走中路，避免顶到 HUD
+  const lv = G.level || {};
+  const hpMul = lv.hpMul || 1, spdMul = lv.spdMul || 1;
+  const dmgMul = 1 + ((lv.hpMul || 1) - 1) * 0.7;
+  const hp = Math.round(def.hp * hpMul);
   const z = {
     id:G.uid++, key:ev.type, def, lane:ev.lane,
     x:SPAWN_X + rand(0, 40), y:LANE_Y[ev.lane],
-    hp:def.hp, maxHp:def.hp, size:def.size,
-    speed:def.speed * (isBoss ? 1 : 1),
+    hp:hp, maxHp:hp, size:def.size,
+    speed:def.speed * spdMul,
+    dps:(def.dps || 0) * dmgMul,
     flash:0, walk:rand(0, 6.28), moving:true, dead:false,
+    spitCd:def.ranged ? rand(0.8, 2.0) : 0,
     isBoss
   };
   G.zombies.push(z);
@@ -739,7 +952,7 @@ function explode(x, lane, dmg, r){
     addPart({type:'spark', x:x + rand(-14, 14), y:LANE_Y[lane] + rand(-20, 10),
              vx:rand(-240, 240), vy:rand(-260, 60), g:420, life:rand(0.2, 0.6), maxLife:0.6, size:rand(1.5, 4), color:'#ffb545'});
   }
-  addPart({type:'ring', x, y:LANE_Y[lane] - 10, life:0.45, maxLife:0.45, size:r * 1.5, color:'#ffd166'});
+  addPart({type:'ring', x, y:LANE_Y[lane] - 10, life:0.4, maxLife:0.4, size:r * 1.15, color:'#ffd166'});
   addPart({type:'smoke', x, y:LANE_Y[lane] - 12, vx:0, vy:-20, life:0.8, maxLife:0.8, size:r * 0.5, color:'rgba(60,55,50,0.7)'});
   G.shake = Math.max(G.shake, 9);
   sfx('boom');
@@ -779,9 +992,11 @@ function fire(s){
     muzzle(mx, my, 9, '#ffb845');
     if(Math.random() < 0.35) sfx('gatling');
   } else if(def.key === 'heavy'){
+    // 子弹寿命必须够飞满声明射程（最短初速 760），否则“射程 780”只是摆设，远一点的僵尸永远打不到
+    const pelletLife = (def.range + 30) / 760;
     for(let i = 0; i < def.pellets; i++){
       G.bullets.push({lane:s.lane, x:mx, y:my + rand(-4, 4), vx:rand(760, 900),
-                      vy:rand(-70, 70), dmg:def.dmg, life:0.55, type:'pellet'});
+                      vy:rand(-70, 70), dmg:def.dmg, life:pelletLife, type:'pellet'});
     }
     muzzle(mx, my, 13, '#ff7a5c');
     s.recoil = 1.2;
@@ -829,20 +1044,38 @@ function update(dt){
   updateSoldiers(dt);
   updateBullets(dt);
   updateZombies(dt);
+  updateSpits(dt);
   updateParts(dt);
   updateWeather(dt);
 
   G.zombies = G.zombies.filter(z => !z.dead);
   G.bullets = G.bullets.filter(b => !b.dead);
   G.soldiers = G.soldiers.filter(s => s.hp > 0);
+  G.spits = G.spits.filter(s => !s.dead);
   if(G.boss && G.boss.dead) G.boss = null;
 
+  // 防线耐久归零：不是立刻失败，而是防线崩塌，僵尸冲进内圈继续打
+  if(G.baseHp <= 0 && !G.wallBroken) triggerBreach();
+
   // 输赢判定
-  if(G.baseHp <= 0 && G.phase === 'playing'){
-    G.baseHp = 0;
-    G.loseTimer += dt;
-    if(G.loseTimer > 0.9) endGame(false);
-  } else if(G.qi >= G.queue.length && G.zombies.length === 0 && !G.boss){
+  const cleared = G.qi >= G.queue.length && G.zombies.length === 0 && !G.boss;
+  if(G.wallBroken){
+    // 崩塌之后：只有僵尸越过最左端「失守线」才算失败
+    let crossed = false;
+    for(const z of G.zombies){
+      if(!z.dead && z.x <= BREACH_LINE_X){ crossed = true; break; }
+    }
+    if(crossed){
+      G.loseTimer += dt;
+      G.shake = Math.max(G.shake, 14);
+      if(G.loseTimer > 0.45) endGame(false);
+    } else if(cleared){
+      G.winTimer += dt;
+      if(G.winTimer > 1.1) endGame(true);
+    } else {
+      G.loseTimer = 0;
+    }
+  } else if(cleared){
     G.winTimer += dt;
     if(G.winTimer > 1.1) endGame(true);
   }
@@ -899,46 +1132,165 @@ function updateBullets(dt){
   }
 }
 
+/* 推进距离越远，僵尸越慢：减速量与前推距离成正比 */
+function slowMul(){
+  const adv = Math.max(0, G.wallX - WALL_X0);
+  return Math.max(0.6, 1 - adv * SLOW_PER_PX);
+}
+
+function wallSpark(z, n){
+  for(let i = 0; i < n; i++)
+    addPart({type:'spark', x:G.wallX + rand(2, 20), y:z.y - rand(0, 24) + 20,
+             vx:rand(-20, 60), vy:rand(-50, 10), g:120,
+             life:rand(0.16, 0.36), maxLife:0.36, size:rand(1, 2.8), color:'#ffbe6a'});
+}
+
+/* 喷毒僵尸：隔墙吐酸，专打墙后最近的士兵；没士兵就打墙 */
+function spitAcid(z){
+  let target = null, bestX = -1e9;
+  for(const s of G.soldiers){
+    if(s.lane !== z.lane || s.hp <= 0) continue;
+    if(s.x > bestX && s.x <= G.wallX){ bestX = s.x; target = s; }
+  }
+  const tx = target ? target.x + rand(-5, 5) : G.wallX - 8;
+  const ty = target ? target.y - 30 : LANE_Y[z.lane] - 12;
+  G.spits.push({
+    x:z.x - 16, y:z.y - 54, tx, ty, lane:z.lane,
+    t:0, dur:0.52, dmg:z.def.spitDmg * (z.isBoss ? 1.4 : 1) * (G.level ? (1 + (G.level.hpMul - 1) * 0.5) : 1),
+    soldier:target, dead:false, seed:rand(0, 6.28)
+  });
+  for(let i = 0; i < 5; i++)
+    addPart({type:'spark', x:z.x - 16, y:z.y - 52, vx:rand(-120, -20), vy:rand(-60, 20), g:200,
+             life:rand(0.2, 0.4), maxLife:0.4, size:rand(1.5, 3), color:'#a6ff6b'});
+  sfx('heavy');
+}
+
+function updateSpits(dt){
+  for(const sp of G.spits){
+    if(sp.dead) continue;
+    sp.t += dt;
+    if(sp.t >= sp.dur){
+      sp.dead = true;
+      if(sp.soldier && sp.soldier.hp > 0){
+        sp.soldier.hp -= sp.dmg;
+        sp.soldier.flash = 1;
+        addPart({type:'text', x:sp.soldier.x, y:sp.soldier.y - 80 - rand(0, 6), vy:-40, life:0.6,
+                 maxLife:0.6, text:Math.round(sp.dmg), color:'#a6ff6b', size:14});
+        for(let i = 0; i < 12; i++)
+          addPart({type:'spark', x:sp.soldier.x + rand(-10, 10), y:sp.soldier.y - rand(10, 60),
+                   vx:rand(-120, 120), vy:rand(-120, 40), g:220, life:rand(0.2, 0.5), maxLife:0.5,
+                   size:rand(1.5, 3.2), color:'#a6ff6b'});
+        if(sp.soldier.hp <= 0){
+          addPart({type:'ring', x:sp.soldier.x, y:sp.soldier.y - 12, life:0.4, maxLife:0.4, size:62,
+                   color:sp.soldier.def.accent});
+          sfx('die');
+        }
+      } else {
+        G.baseHp -= sp.dmg;
+        wallSpark({y:LANE_Y[sp.lane]}, 6);
+        addPart({type:'ring', x:G.wallX, y:LANE_Y[sp.lane] - 8, life:0.35, maxLife:0.35, size:44, color:'#9dff70'});
+      }
+    }
+  }
+}
+
+/* 防线崩塌后，僵尸能够到的士兵（同赛道、贴着身位） */
+function soldierInReach(z){
+  const reach = 22 + z.size * 8;
+  let best = null;
+  for(const s of G.soldiers){
+    if(s.hp <= 0 || s.lane !== z.lane) continue;
+    const d = z.x - s.x;
+    if(d <= reach && d >= -(reach + 8)){ if(!best || s.x > best.x) best = s; }
+  }
+  return best;
+}
+
 function updateZombies(dt){
+  const slow = slowMul();
   for(const z of G.zombies){
     if(z.dead) continue;
     z.flash = Math.max(0, z.flash - dt * 3.2);
+    const walkAdd = dt * (z.speed / 34) * (z.isBoss ? 0.7 : 1);
 
-    // 是否被士兵挡住
-    let block = null;
-    for(const s of G.soldiers){
-      if(s.lane !== z.lane || s.hp <= 0) continue;
-      if(z.x >= s.x - 8 && z.x - s.x <= 48 + z.size * 10){
-        if(!block || s.x > block.x) block = s;
+    // 防线崩塌后：不再被墙挡住，冲进内圈，沿途撕咬遇到的士兵
+    if(G.wallBroken){
+      const prey = soldierInReach(z);
+      if(prey){
+        z.moving = false;
+        prey.hp -= z.dps * 1.5 * dt;
+        prey.flash = Math.max(prey.flash, 0.5);
+        G.shake = Math.max(G.shake, 2);
+        if(Math.random() < 0.16)
+          addPart({type:'spark', x:prey.x + rand(-8, 8), y:prey.y - rand(6, 46),
+                   vx:rand(-90, 20), vy:rand(-70, 10), g:160,
+                   life:rand(0.15, 0.35), maxLife:0.35, size:rand(1.2, 2.6), color:'#ff5c4d'});
+        if(prey.hp <= 0 && !prey.routed){
+          prey.routed = true;
+          addPart({type:'ring', x:prey.x, y:prey.y - 12, life:0.45, maxLife:0.45, size:64, color:prey.def.accent});
+          addPart({type:'text', x:prey.x, y:prey.y - 82, vy:-46, life:1.0, maxLife:1.0,
+                   text:'阵亡', color:'#ff8a76', size:15});
+          sfx('die');
+          if(G.soldiers.filter(s => s.hp > 0 && s !== prey).length === 0)
+            toast('内圈没人了！绝不能让僵尸走到最左端');
+        }
+      } else {
+        z.moving = true;
+        z.x -= z.speed * slow * dt;
+        z.walk += walkAdd * slow;
       }
+      continue;
     }
 
-    if(block){
-      z.moving = false;
-      block.hp -= z.def.dps * dt;
-      block.flash = 1;
-      if(Math.random() < 0.25)
-        addPart({type:'spark', x:block.x + 6, y:block.y - 12, vx:rand(-40, 20), vy:rand(-50, -10),
-                 g:120, life:0.25, maxLife:0.25, size:2, color:'#ff9d8a'});
-      if(block.hp <= 0){
-        for(let i = 0; i < 12; i++)
-          addPart({type:'spark', x:block.x, y:block.y - 10, vx:rand(-160, 160), vy:rand(-180, 20),
-                   g:280, life:rand(0.25, 0.7), maxLife:0.7, size:rand(1.5, 3.5), color:block.def.accent});
-        addPart({type:'ring', x:block.x, y:block.y - 10, life:0.4, maxLife:0.4, size:60, color:block.def.accent});
-        sfx('die');
+    // 喷毒僵尸：停在防线外一段距离隔墙吐毒
+    // 驻守必须满足「本行有士兵的射程够得到它」，否则它会永远停在这一行打不到的位置：
+    // 士兵打不到它 → 它不会被消灭；它又死站着不退 → 这一行永远清不掉，局面彻底锁死。
+    // 所以只要没人够得到它，就继续往前走，直到进入某个士兵的射程，或者直接贴到墙前。
+    if(z.def.ranged){
+      const stopX = G.wallX + z.def.ranged;
+      const frontX = G.wallX + 20 + z.size * 8;
+      const canBeShot = G.soldiers.some(s => s.lane === z.lane && s.hp > 0 && s.x + s.def.range >= z.x);
+      if(z.x <= frontX){
+        // 已经贴到防线：近距离吐酸（墙后有兵就打兵，没兵就腐蚀墙）
+        z.moving = false;
+        z.x = Math.max(z.x, frontX);
+        z.spitCd -= dt;
+        if(z.spitCd <= 0){
+          z.spitCd = z.def.spitCd;
+          spitAcid(z);
+        }
+        continue;
       }
-    } else if(z.x <= BASE_X + 16){
+      if(z.x > stopX || !canBeShot){
+        z.moving = true;
+        z.x -= z.speed * slow * dt;
+        z.walk += walkAdd * slow;
+      } else {
+        z.moving = false;
+        z.spitCd -= dt;
+        if(z.spitCd <= 0){
+          z.spitCd = z.def.spitCd;
+          spitAcid(z);
+        }
+      }
+      continue;
+    }
+
+    const frontX = G.wallX + 20 + z.size * 8;
+    if(z.x <= frontX){
+      // 撞上防线：停下来啃墙
       z.moving = false;
-      G.baseHp -= z.def.dps * dt * 0.9;
-      G.shake = Math.max(G.shake, 3);
-      if(Math.random() < 0.3)
-        addPart({type:'spark', x:BASE_X + rand(0, 10), y:z.y - rand(4, 20), vx:rand(-30, 30), vy:rand(-40, 10),
-                 g:100, life:0.3, maxLife:0.3, size:2.5, color:'#ff5c4d'});
-      if(Math.random() < 0.14) toast('基地护盾受损！');
+      z.x = Math.max(z.x, frontX);
+      G.baseHp -= z.dps * dt;
+      G.shake = Math.max(G.shake, z.isBoss ? 7 : 2.5);
+      if(Math.random() < (z.isBoss ? 0.5 : 0.25)) wallSpark(z, 2);
+      if(Math.random() < 0.08) addPart({type:'ring', x:frontX - 10, y:z.y - 6, life:0.3, maxLife:0.3,
+                                        size:rand(26, 46), color:'#ff8a5a'});
+      if(Math.random() < 0.02) toast(G.baseHp / G.baseMax < 0.35 ? '防线快撑不住了！' : '防线正在被啃咬！');
     } else {
       z.moving = true;
-      z.x -= z.speed * dt;
-      z.walk += dt * (z.speed / 34) * (z.isBoss ? 0.7 : 1);
+      z.x -= z.speed * slow * dt;
+      z.walk += walkAdd * slow;
     }
   }
 }
@@ -963,6 +1315,31 @@ function updateWeather(dt){
     else if(th.weather === 'ember'){ p.y -= p.spd * 1.6 * dt; p.x += Math.sin(G.time + p.seed) * 20 * dt; }
     if(p.y > 720 + 20 || p.y < -20 || p.x < -30) resetWeatherP(p, true);
   }
+}
+
+/* 防线耐久归零：防线崩塌，僵尸冲进内圈，进入「死守指挥所」阶段 */
+function triggerBreach(){
+  if(G.wallBroken) return;
+  G.wallBroken = true;
+  G.baseHp = 0;
+  G.loseTimer = 0;
+  G.shake = 28;
+  G.flash = 0.7;
+  G.whiteFlash = 0.35;
+  sfx('boom');
+  toast('防线被突破了！僵尸冲进内圈，走到最左端指挥所才算失守');
+  for(let i = 0; i < LANES; i++){
+    for(let k = 0; k < 14; k++)
+      addPart({type:'spark', x:G.wallX + rand(-18, 24), y:LANE_Y[i] + rand(-34, 34),
+               vx:rand(-180, 120), vy:rand(-150, 40), g:200,
+               life:rand(0.3, 0.9), maxLife:0.9, size:rand(1.5, 3.6),
+               color: k % 3 ? '#ffbe6a' : '#ff5c4d'});
+    addPart({type:'ring', x:G.wallX, y:LANE_Y[i], life:0.6, maxLife:0.6, size:112, color:'#ff5c4d'});
+    addPart({type:'smoke', x:G.wallX + rand(-10, 10), y:LANE_Y[i] - 10, vx:rand(-20, 20), vy:-40,
+             life:1.6, maxLife:1.6, size:rand(26, 44), color:'rgba(40,34,30,0.75)'});
+  }
+  syncHUD();
+  syncTools();
 }
 
 /* =========================================================
@@ -994,12 +1371,12 @@ function showResult(win){
   document.getElementById('resKills').textContent = G.kills;
   document.getElementById('resScore').textContent = G.score;
   document.getElementById('resAlive').textContent = G.soldiers.length;
-  document.getElementById('resHp').textContent = Math.max(0, Math.round(G.baseHp));
+  document.getElementById('resHp').textContent = G.wallBroken ? '已破' : Math.max(0, Math.round(G.baseHp));
   document.getElementById('resTips').innerHTML = win
     ? (G.lvIdx < LEVELS.length - 1
         ? '下一关：<span>' + LEVELS[G.lvIdx + 1].name + '</span>，僵尸会更凶。'
-        : '全部战场已清空，你就是这条防线。')
-    : '提示：<span>重甲兵</span>顶在前面挡路，<span>坦克兵</span>放在后排炸一片。';
+        : '八个战场全部清空，你就是这条防线。')
+    : '提示：<span>重甲兵</span>守住靠墙的位置，<span>坦克兵</span>放后排炸一片；墙前堆满僵尸时用<span>推进</span>减速，快破了就用<span>修墙</span>。防线被突破后先拦住冲进内圈的僵尸，别让它们走到最左端的指挥所。';
   const nextBtn = document.getElementById('btnNext');
   nextBtn.style.display = win && G.lvIdx < LEVELS.length - 1 ? '' : 'none';
   document.getElementById('btnRetry').textContent = win ? '再打一次' : '重打本关';
@@ -1094,11 +1471,15 @@ function syncHUD(){
     html += '<div class="pip' + (i < G.waveNow - 1 ? ' done' : '') + '"></div>';
   }
   pips.innerHTML = html;
-  document.getElementById('hpNum').textContent = Math.max(0, Math.round(G.baseHp));
-  const hpPct = clamp(G.baseHp / G.baseMax * 100, 0, 100);
+  document.getElementById('hpNum').textContent = G.wallBroken ? '已破' : Math.max(0, Math.round(G.baseHp));
+  const hpLabel = document.getElementById('hpLabel');
+  if(hpLabel) hpLabel.textContent = G.wallBroken ? '防线状态' : '防线耐久';
+  const hpPct = G.wallBroken ? 0 : clamp(G.baseHp / G.baseMax * 100, 0, 100);
   const hf = document.getElementById('hpFill');
   hf.style.width = hpPct + '%';
   hf.style.filter = hpPct < 35 ? 'saturate(1.5) hue-rotate(-12deg)' : '';
+  const banner = document.getElementById('breachBanner');
+  if(banner) banner.classList.toggle('show', G.wallBroken);
   if(G.boss){
     const pct = Math.max(0, G.boss.hp / G.boss.maxHp * 100);
     document.getElementById('bossFill').style.width = pct + '%';
@@ -1260,6 +1641,9 @@ function buildBackdrop(key){
   else if(key === 'desert') bgDesert(th);
   else if(key === 'snow') bgSnow(th);
   else if(key === 'factory') bgFactory(th);
+  else if(key === 'metro') bgMetro(th);
+  else if(key === 'swamp') bgSwamp(th);
+  else if(key === 'steel') bgSteel(th);
   else bgFortress(th);
 
   drawField(th);
@@ -1427,6 +1811,109 @@ function bgFortress(th){
   bgc.beginPath(); bgc.moveTo(280, 32); bgc.lineTo(330, 46); bgc.lineTo(280, 62); bgc.closePath(); bgc.fill();
 }
 
+/* ------- 地下隧道 ------- */
+function bgMetro(th){
+  // 拱顶
+  bgc.fillStyle = 'rgba(4,8,12,0.95)';
+  bgc.beginPath();
+  bgc.moveTo(0, 0); bgc.lineTo(W, 0); bgc.lineTo(W, 132);
+  bgc.bezierCurveTo(1000, 38, 280, 38, 0, 132);
+  bgc.closePath(); bgc.fill();
+  // 拱肋
+  bgc.strokeStyle = 'rgba(90,120,140,0.16)'; bgc.lineWidth = 3;
+  for(let x = 110; x < W; x += 180){
+    bgc.beginPath(); bgc.moveTo(x, 6); bgc.quadraticCurveTo(x + 22, 64, x, 122); bgc.stroke();
+  }
+  // 顶灯
+  for(let x = 220; x < W - 60; x += 260){
+    const lg = bgc.createRadialGradient(x, 116, 0, x, 116, 130);
+    lg.addColorStop(0, 'rgba(160,220,255,0.32)'); lg.addColorStop(1, 'rgba(160,220,255,0)');
+    bgc.fillStyle = lg; bgc.fillRect(x - 130, 30, 260, 200);
+    bgc.fillStyle = 'rgba(215,240,255,0.85)'; bgc.fillRect(x - 18, 110, 36, 4);
+    bgc.fillStyle = 'rgba(30,44,56,0.9)'; bgc.fillRect(x - 8, 96, 16, 14);
+  }
+  // 电缆
+  bgc.strokeStyle = 'rgba(70,95,115,0.5)'; bgc.lineWidth = 5;
+  bgc.beginPath(); bgc.moveTo(0, 134); bgc.bezierCurveTo(400, 152, 900, 120, W, 142); bgc.stroke();
+  // 轨道
+  bgc.fillStyle = 'rgba(70,88,102,0.4)';
+  bgc.fillRect(0, 474, W, 4); bgc.fillRect(0, 546, W, 4);
+  for(let x = 0; x < W; x += 64){
+    bgc.fillStyle = 'rgba(40,54,66,0.45)';
+    bgc.fillRect(x, 462, 8, 100);
+  }
+  bgc.fillStyle = hexA(th.accent, 0.08); bgc.fillRect(0, 150, W, 320);
+}
+
+/* ------- 腐蚀沼泽 ------- */
+function bgSwamp(th){
+  // 沼气雾
+  const fog = bgc.createLinearGradient(0, 150, 0, 340);
+  fog.addColorStop(0, 'rgba(120,220,120,0.20)'); fog.addColorStop(1, 'rgba(120,220,120,0)');
+  bgc.fillStyle = fog; bgc.fillRect(0, 150, W, 200);
+  // 枯树
+  for(const t of [[120, 96], [430, 72], [880, 104], [1130, 84]]){
+    const tx = t[0], h = t[1];
+    bgc.strokeStyle = 'rgba(8,16,10,0.95)'; bgc.lineWidth = 8;
+    bgc.beginPath(); bgc.moveTo(tx, 154); bgc.quadraticCurveTo(tx - 12, 154 - h / 2, tx + 8, 154 - h); bgc.stroke();
+    bgc.lineWidth = 3;
+    bgc.beginPath(); bgc.moveTo(tx + 2, 154 - h * 0.58); bgc.lineTo(tx - 30, 154 - h * 0.84); bgc.stroke();
+    bgc.beginPath(); bgc.moveTo(tx + 5, 154 - h * 0.74); bgc.lineTo(tx + 34, 154 - h * 0.94); bgc.stroke();
+  }
+  // 沼气泡
+  for(let i = 0; i < 6; i++){
+    const bx = rand(300, 1160), by = rand(168, 300);
+    bgc.fillStyle = 'rgba(110,190,80,' + rand(0.10, 0.20).toFixed(2) + ')';
+    bgc.beginPath(); bgc.ellipse(bx, by, rand(38, 92), rand(7, 15), 0, 0, 6.3); bgc.fill();
+  }
+  // 水面反光
+  const wg = bgc.createLinearGradient(0, 156, 0, 240);
+  wg.addColorStop(0, 'rgba(160,255,170,0.10)'); wg.addColorStop(1, 'rgba(160,255,170,0)');
+  bgc.fillStyle = wg; bgc.fillRect(0, 156, W, 90);
+  // 岸边的蘑菇
+  for(let i = 0; i < 7; i++){
+    const mx = rand(160, 1200), my = rand(150, 186);
+    bgc.fillStyle = 'rgba(150,255,140,0.35)';
+    bgc.beginPath(); bgc.ellipse(mx, my, rand(8, 16), rand(4, 7), 0, Math.PI, 0); bgc.fill();
+    bgc.fillStyle = 'rgba(60,90,60,0.6)'; bgc.fillRect(mx - 1.5, my, 3, 8);
+  }
+}
+
+/* ------- 熔钢绝境 ------- */
+function bgSteel(th){
+  // 高炉
+  bgc.fillStyle = 'rgba(18,11,7,0.95)';
+  bgc.fillRect(80, 44, 96, 108); bgc.fillRect(1070, 30, 130, 122);
+  bgc.fillRect(300, 96, 40, 56);
+  // 炉口熔光
+  bgc.fillStyle = 'rgba(255,170,80,0.75)';
+  bgc.fillRect(100, 92, 56, 4); bgc.fillRect(1096, 84, 78, 4);
+  const fg = bgc.createRadialGradient(128, 96, 0, 128, 96, 130);
+  fg.addColorStop(0, 'rgba(255,160,70,0.35)'); fg.addColorStop(1, 'rgba(255,120,40,0)');
+  bgc.fillStyle = fg; bgc.fillRect(0, 0, 300, 240);
+  // 钢架
+  bgc.strokeStyle = 'rgba(80,56,40,0.85)'; bgc.lineWidth = 4;
+  for(const cx of [240, 520, 800, 1010]){
+    bgc.beginPath(); bgc.moveTo(cx, 40); bgc.lineTo(cx, 154); bgc.stroke();
+    bgc.beginPath(); bgc.moveTo(cx - 40, 154); bgc.lineTo(cx + 40, 100); bgc.stroke();
+  }
+  // 横梁
+  bgc.fillStyle = 'rgba(40,25,18,0.9)'; bgc.fillRect(0, 30, W, 8);
+  // 管道
+  bgc.strokeStyle = 'rgba(90,60,42,0.7)'; bgc.lineWidth = 10;
+  bgc.beginPath(); bgc.moveTo(0, 140); bgc.lineTo(320, 140); bgc.stroke();
+  bgc.beginPath(); bgc.moveTo(960, 132); bgc.lineTo(W, 132); bgc.stroke();
+  // 熔岩光带
+  const lg = bgc.createLinearGradient(0, 250, 0, 470);
+  lg.addColorStop(0, 'rgba(255,110,40,0.16)'); lg.addColorStop(1, 'rgba(255,110,40,0)');
+  bgc.fillStyle = lg; bgc.fillRect(0, 250, W, 220);
+  // 火花
+  for(let i = 0; i < 40; i++){
+    bgc.fillStyle = 'rgba(255,190,90,' + rand(0.15, 0.5).toFixed(2) + ')';
+    bgc.fillRect(rand(0, W), rand(150, 300), 2, 2);
+  }
+}
+
 /* ------- 通用赛道 ------- */
 function drawField(th){
   const fieldTop = LANE_TOP, fieldH = LANE_H * LANES;
@@ -1515,13 +2002,16 @@ function render(){
   else { ctx.fillStyle = '#080d12'; ctx.fillRect(0, 0, W, H); }
 
   drawLaneGlow();
-  drawBase();
+  drawInnerZone();
+  drawWall();
+  if(G.wallBroken) drawBreachLine();
   drawSpawnZone();
 
   if(G.phase !== 'menu'){
     const sorted = G.zombies.slice().sort((a, b) => a.lane - b.lane);
     for(const s of G.soldiers) drawSoldier(s);
     for(const z of sorted) drawZombie(z);
+    drawSpits();
     for(const b of G.bullets) drawBullet(b);
   }
   drawParticles();
@@ -1552,69 +2042,255 @@ function drawLaneGlow(){
   }
 }
 
-/* ------- 左侧基地 ------- */
-function drawBase(){
-  const top = LANE_TOP - 4, bot = LANE_TOP + LANE_H * LANES + 4, hgt = bot - top;
-  const pct = G.baseMax ? clamp(G.baseHp / G.baseMax, 0, 1) : 1;
+/* ------- 内圈（我方阵地，防线以内） ------- */
+function drawInnerZone(){
+  const x = G.wallX;
+  const fieldTop = LANE_TOP, fieldBot = LANE_TOP + LANE_H * LANES;
+  // 内圈地面冷色
+  const g = ctx.createLinearGradient(0, 0, x - 26, 0);
+  g.addColorStop(0, 'rgba(24,64,86,0.26)');
+  g.addColorStop(0.6, 'rgba(24,64,86,0.10)');
+  g.addColorStop(1, 'rgba(24,64,86,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, fieldTop, x - 26, fieldBot - fieldTop);
+
+  // 指挥所（内圈左侧的监控台）
+  const cy = fieldTop + (fieldBot - fieldTop) / 2;
+  // 底座阴影
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(84, cy + 82, 58, 7, 0, 0, 6.3); ctx.fill();
+  // 机身：竖向金属渐变 + 冷光边缘
+  const bodyG = ctx.createLinearGradient(0, cy - 80, 0, cy + 78);
+  bodyG.addColorStop(0, 'rgba(32,52,63,0.95)');
+  bodyG.addColorStop(0.55, 'rgba(18,30,38,0.95)');
+  bodyG.addColorStop(1, 'rgba(10,18,24,0.95)');
+  ctx.fillStyle = bodyG;
+  pathRR(ctx, 30, cy - 76, 106, 152, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(127,227,255,0.30)'; ctx.lineWidth = 1; ctx.stroke();
+  // 顶部散热条
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  for(let i = 0; i < 5; i++) ctx.fillRect(48 + i * 12, cy - 68, 6, 3);
+  // 屏幕外框
+  ctx.fillStyle = 'rgba(6,14,19,0.95)';
+  pathRR(ctx, 42, cy - 56, 82, 58, 5); ctx.fill();
+  ctx.strokeStyle = 'rgba(127,227,255,0.45)'; ctx.stroke();
+  // 雷达圈 + 扫描线
+  const rcx = 83, rcy = cy - 27, rr = 20;
+  ctx.strokeStyle = 'rgba(127,227,255,0.22)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(rcx, rcy, rr, 0, 6.3); ctx.stroke();
+  ctx.beginPath(); ctx.arc(rcx, rcy, rr * 0.55, 0, 6.3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(rcx - rr, rcy); ctx.lineTo(rcx + rr, rcy); ctx.moveTo(rcx, rcy - rr); ctx.lineTo(rcx, rcy + rr); ctx.stroke();
+  const sweep = G.time * 2.2 % 6.283;
+  const sg = ctx.createLinearGradient(rcx, rcy, rcx + Math.cos(sweep) * rr, rcy + Math.sin(sweep) * rr);
+  sg.addColorStop(0, 'rgba(127,227,255,0.55)');
+  sg.addColorStop(1, 'rgba(127,227,255,0)');
+  ctx.fillStyle = sg;
+  ctx.beginPath(); ctx.moveTo(rcx, rcy);
+  ctx.arc(rcx, rcy, rr, sweep, sweep + 0.7); ctx.lineTo(rcx, rcy); ctx.fill();
+  // 目标点
+  for(let i = 0; i < 3; i++){
+    const a = i * 2.1 + 0.6, d = 6 + i * 5;
+    ctx.fillStyle = 'rgba(255,150,90,' + (0.45 + 0.45 * Math.abs(Math.sin(G.time * 2.4 + i))) + ')';
+    ctx.beginPath(); ctx.arc(rcx + Math.cos(a) * d, rcy + Math.sin(a) * d * 0.8, 1.8, 0, 6.3); ctx.fill();
+  }
+  // 状态灯
+  for(let i = 0; i < 3; i++){
+    const on = (Math.sin(G.time * 4 + i * 1.6) > 0);
+    ctx.fillStyle = on ? ['#ffb545', '#7fe3ff', '#8ee06a'][i] : 'rgba(255,255,255,0.10)';
+    ctx.beginPath(); ctx.arc(50 + i * 13, cy + 12, 2.4, 0, 6.3); ctx.fill();
+  }
+  // 铭牌
+  ctx.fillStyle = 'rgba(127,227,255,0.16)';
+  pathRR(ctx, 40, cy + 24, 84, 18, 3); ctx.fill();
+  ctx.fillStyle = 'rgba(178,226,240,0.85)';
+  ctx.font = 'bold 11px "Noto Sans SC",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('内圈 · 指挥所', 82, cy + 37);
+  ctx.textAlign = 'left';
+  // 天线
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(124, cy - 76); ctx.lineTo(124, cy - 112); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,92,77,' + (0.4 + 0.5 * Math.abs(Math.sin(G.time * 2))) + ')';
+  ctx.beginPath(); ctx.arc(124, cy - 114, 3, 0, 6.3); ctx.fill();
+}
+
+/* ------- 防线（画在最外侧，枪手都在它内侧） ------- */
+function drawWall(){
+  if(G.wallBroken){ drawBrokenWall(); return; }
   const t = G.time;
+  const pct = G.baseMax ? clamp(G.baseHp / G.baseMax, 0, 1) : 1;
+  const x = G.wallX;
+  const top = LANE_TOP, bot = LANE_TOP + LANE_H * LANES;
+  const danger = pct < 0.32;
+  const gc = danger ? '255,92,77' : '127,227,255';
 
-  // 墙体
-  const g = ctx.createLinearGradient(24, 0, 128, 0);
-  g.addColorStop(0, '#40545f'); g.addColorStop(0.45, '#27363f'); g.addColorStop(1, '#151f25');
-  ctx.fillStyle = g;
-  pathRR(ctx, 22, top, 106, hgt, 5); ctx.fill();
+  // 地面投影
+  ctx.fillStyle = 'rgba(0,0,0,0.42)';
+  ctx.fillRect(x - 22, top + 8, 66, bot - top - 12);
 
-  // 面板分割
-  ctx.strokeStyle = 'rgba(255,255,255,0.16)'; ctx.lineWidth = 1;
-  for(let y = top + 26; y < bot; y += 52){
-    ctx.beginPath(); ctx.moveTo(26, y); ctx.lineTo(124, y); ctx.stroke();
+  // 后方能量屏障
+  const glow = ctx.createLinearGradient(x - 48, 0, x - 6, 0);
+  glow.addColorStop(0, 'rgba(' + gc + ',0)');
+  glow.addColorStop(0.55, 'rgba(' + gc + ',' + (0.05 + 0.08 * pct) + ')');
+  glow.addColorStop(1, 'rgba(' + gc + ',' + (0.14 + 0.18 * pct) + ')');
+  ctx.fillStyle = glow; ctx.fillRect(x - 48, top, 42, bot - top);
+
+  for(let i = 0; i < LANES; i++){
+    const y0 = LANE_TOP + i * LANE_H + 6;
+    const h = LANE_H - 12;
+
+    // 钢板主体
+    const g = ctx.createLinearGradient(x - 18, 0, x + 18, 0);
+    g.addColorStop(0, '#4c5e69'); g.addColorStop(0.38, '#33444e'); g.addColorStop(1, '#1a242b');
+    ctx.fillStyle = g;
+    pathRR(ctx, x - 18, y0, 36, h, 4); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 1.4; ctx.stroke();
+
+    // 铆钉
+    ctx.fillStyle = 'rgba(255,255,255,0.14)';
+    for(let yy = y0 + 12; yy < y0 + h - 6; yy += 16){
+      ctx.beginPath(); ctx.arc(x - 11, yy, 1.5, 0, 6.3); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 11, yy, 1.5, 0, 6.3); ctx.fill();
+    }
+
+    // 顶部警示条
+    ctx.fillStyle = danger ? 'rgba(255,92,77,0.9)' : 'rgba(255,181,69,0.85)';
+    ctx.fillRect(x - 20, y0 - 3, 40, 4);
+
+    // 朝外的尖刺
+    ctx.fillStyle = '#93a6b1';
+    for(let k = 0; k < 2; k++){
+      const sy = y0 + 20 + k * (h - 40);
+      ctx.beginPath();
+      ctx.moveTo(x + 17, sy - 8); ctx.lineTo(x + 35, sy); ctx.lineTo(x + 17, sy + 8);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.65)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    // 损伤裂缝
+    const crack = 1 - pct;
+    if(crack > 0.25){
+      ctx.save();
+      ctx.globalAlpha = clamp((crack - 0.16) * 1.6, 0, 1);
+      ctx.strokeStyle = danger ? 'rgba(255,120,90,0.85)' : 'rgba(8,12,15,0.85)';
+      ctx.lineWidth = 1.6;
+      const cr = [[0.06, -8], [0.22, 7], [0.42, -5], [0.6, 8], [0.78, -6], [0.92, 3]];
+      ctx.beginPath();
+      ctx.moveTo(x + cr[0][1], y0 + h * cr[0][0]);
+      for(let k = 1; k < cr.length; k++) ctx.lineTo(x + cr[k][1], y0 + h * cr[k][0]);
+      ctx.stroke();
+      ctx.restore();
+    }
+    // 破损缺口
+    if(pct < 0.22){
+      ctx.fillStyle = 'rgba(3,5,7,' + clamp(0.35 + (0.22 - pct) * 2.4, 0, 0.85) + ')';
+      ctx.fillRect(x - 9, y0 + h * 0.42, 18, h * 0.28);
+    }
+
+    // 状态灯
+    const blink = 0.5 + 0.5 * Math.sin(t * 6 + i * 1.1);
+    ctx.save();
+    ctx.shadowColor = danger ? 'rgba(255,92,77,0.9)' : 'rgba(127,227,255,0.9)';
+    ctx.shadowBlur = 12 * blink;
+    ctx.fillStyle = danger ? 'rgba(255,92,77,' + (0.5 + 0.5 * blink) + ')' : 'rgba(127,227,255,0.9)';
+    ctx.beginPath(); ctx.arc(x, y0 + 8, 3, 0, 6.3); ctx.fill();
+    ctx.restore();
   }
-  // 铆钉
-  for(let y = top + 14; y < bot; y += 26){
-    ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    ctx.beginPath(); ctx.arc(32, y, 1.6, 0, 6.3); ctx.fill();
-    ctx.beginPath(); ctx.arc(118, y, 1.6, 0, 6.3); ctx.fill();
-  }
 
-  // 中央能量核心
-  const cx = 76, cy = top + hgt / 2;
-  const pulse = 0.55 + 0.45 * Math.sin(t * 2.2);
-  const core = ctx.createRadialGradient(cx, cy, 2, cx, cy, 46);
-  core.addColorStop(0, 'rgba(127,227,255,' + (0.85 * (0.4 + pct * 0.6)) + ')');
-  core.addColorStop(0.5, 'rgba(127,227,255,0.18)');
-  core.addColorStop(1, 'rgba(127,227,255,0)');
-  ctx.fillStyle = core;
-  ctx.beginPath(); ctx.arc(cx, cy, 46, 0, 6.3); ctx.fill();
-  // 六边形
-  ctx.strokeStyle = pct > 0.35 ? 'rgba(127,227,255,' + (0.5 + pulse * 0.4) + ')' : 'rgba(255,92,77,' + (0.5 + pulse * 0.4) + ')';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for(let i = 0; i < 6; i++){
-    const a = i / 6 * 6.283 + t * 0.4;
-    const px = cx + Math.cos(a) * 22, py = cy + Math.sin(a) * 22;
-    if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  // 推进刻度：显示防线已经前推了几格
+  if(G.pushUsed > 0){
+    ctx.fillStyle = 'rgba(255,181,69,0.5)';
+    for(let i = 0; i < G.pushUsed; i++){
+      ctx.fillRect(WALL_X0 + 62 * i + 18, bot + 4, 30, 2);
+    }
   }
-  ctx.closePath(); ctx.stroke();
-  ctx.fillStyle = pct > 0.35 ? 'rgba(127,227,255,0.9)' : 'rgba(255,92,77,0.9)';
-  ctx.beginPath(); ctx.arc(cx, cy, 6 + pulse * 2, 0, 6.3); ctx.fill();
+}
 
-  // 能量屏障
+/* ------- 崩塌后的防线：只剩断墙、残骸与余火 ------- */
+function drawBrokenWall(){
+  const t = G.time;
+  const x = G.wallX;
+  const top = LANE_TOP, bot = LANE_TOP + LANE_H * LANES;
+  // 焦黑地面（比墙体稍宽一点，像被炸开过）
+  ctx.fillStyle = 'rgba(0,0,0,0.38)';
+  ctx.fillRect(x - 30, top + 4, 78, bot - top - 8);
+
+  for(let i = 0; i < LANES; i++){
+    const y0 = LANE_TOP + i * LANE_H + 6;
+    const h = LANE_H - 12;
+    const upH = 18 + (i % 2) * 7;                 // 上半截残墙
+    const loH = 16 + (i % 3) * 6;                 // 下半截残墙
+
+    // 上半截：金属渐变 + 断口
+    const gu = ctx.createLinearGradient(x - 18, 0, x + 18, 0);
+    gu.addColorStop(0, '#465863'); gu.addColorStop(0.4, '#2f3a42'); gu.addColorStop(1, '#1d252b');
+    ctx.fillStyle = gu;
+    ctx.beginPath();
+    ctx.moveTo(x - 18, y0 + upH - 6);
+    ctx.lineTo(x - 9, y0 + upH); ctx.lineTo(x - 2, y0 + upH - 7);
+    ctx.lineTo(x + 6, y0 + upH + 1); ctx.lineTo(x + 18, y0 + upH - 6);
+    ctx.lineTo(x + 18, y0); ctx.lineTo(x - 18, y0);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.2; ctx.stroke();
+
+    // 下半截
+    const gl = ctx.createLinearGradient(x - 18, 0, x + 18, 0);
+    gl.addColorStop(0, '#3c4a54'); gl.addColorStop(0.5, '#273137'); gl.addColorStop(1, '#181f24');
+    ctx.fillStyle = gl;
+    ctx.beginPath();
+    ctx.moveTo(x - 18, y0 + h);
+    ctx.lineTo(x - 18, y0 + h - loH + 5);
+    ctx.lineTo(x - 7, y0 + h - loH); ctx.lineTo(x + 2, y0 + h - loH + 6);
+    ctx.lineTo(x + 18, y0 + h - loH + 3);
+    ctx.lineTo(x + 18, y0 + h);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 1.2; ctx.stroke();
+
+    // 裸露的钢筋
+    ctx.strokeStyle = 'rgba(150,164,174,0.55)'; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(x - 6, y0 + upH);
+    ctx.lineTo(x - 9, y0 + upH + 9 + (i % 2) * 3);
+    ctx.moveTo(x + 5, y0 + h - loH);
+    ctx.lineTo(x + 8, y0 + h - loH - 7);
+    ctx.stroke();
+
+    // 断口余火
+    const fl = 0.5 + 0.5 * Math.abs(Math.sin(t * 4 + i * 1.7));
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,120,60,0.85)'; ctx.shadowBlur = 12 * fl;
+    ctx.fillStyle = 'rgba(255,146,64,' + (0.4 + 0.45 * fl) + ')';
+    ctx.beginPath(); ctx.arc(x + (i % 2 ? 9 : -9), y0 + upH - 2, 2.2 + fl * 1.6, 0, 6.3); ctx.fill();
+    ctx.restore();
+
+    // 落在地上的碎块
+    ctx.fillStyle = 'rgba(78,92,101,0.6)';
+    ctx.fillRect(x - 38 + i * 4, y0 + h - 5, 14 + (i % 3) * 8, 3);
+  }
+}
+
+/* ------- 失守线：防线崩塌后提示「走到这里就输了」 ------- */
+function drawBreachLine(){
+  const t = G.time;
+  const top = LANE_TOP, bot = LANE_TOP + LANE_H * LANES;
+  const pulse = 0.45 + 0.35 * Math.abs(Math.sin(t * 2.4));
+  const g = ctx.createLinearGradient(BREACH_LINE_X - 28, 0, BREACH_LINE_X + 28, 0);
+  g.addColorStop(0, 'rgba(255,92,77,0)');
+  g.addColorStop(0.5, 'rgba(255,92,77,' + (0.12 * pulse) + ')');
+  g.addColorStop(1, 'rgba(255,92,77,0)');
+  ctx.fillStyle = g; ctx.fillRect(BREACH_LINE_X - 28, top, 56, bot - top);
+
   ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  const bar = ctx.createLinearGradient(132, 0, 152, 0);
-  bar.addColorStop(0, pct > 0.35 ? 'rgba(140,240,255,0.62)' : 'rgba(255,92,77,0.6)');
-  bar.addColorStop(0.6, pct > 0.35 ? 'rgba(127,227,255,0.12)' : 'rgba(255,92,77,0.12)');
-  bar.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = bar;
-  ctx.fillRect(130, top, 26, hgt);
-  // 扫描线
-  const scanY = top + ((t * 120) % hgt);
-  ctx.fillStyle = 'rgba(200,245,255,0.20)';
-  ctx.fillRect(132, scanY, 18, 2);
+  ctx.strokeStyle = 'rgba(255,92,77,' + (0.32 + 0.3 * pulse) + ')';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(BREACH_LINE_X, top); ctx.lineTo(BREACH_LINE_X, bot); ctx.stroke();
   ctx.restore();
-  ctx.strokeStyle = 'rgba(127,227,255,0.28)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(142, top); ctx.lineTo(142, bot); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,138,118,' + (0.55 + 0.4 * pulse) + ')';
+  ctx.font = 'bold 12px "Noto Sans SC",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('失 守 线', BREACH_LINE_X, bot + 16);
+  ctx.textAlign = 'left';
 }
 
 /* ------- 右端出怪区 ------- */
@@ -1661,6 +2337,18 @@ function drawSoldier(s){
   // 影子
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.beginPath(); ctx.ellipse(s.x + 3, s.y + 33, 23, 7, 0, 0, 6.3); ctx.fill();
+
+  // 换防模式：标出可替换的位置
+  if(G.swapArmed){
+    const hit = (G.hoverSoldier === s.id);
+    ctx.save();
+    ctx.strokeStyle = hit ? '#ffb545' : 'rgba(255,181,69,0.32)';
+    ctx.lineWidth = hit ? 2.2 : 1.2;
+    ctx.setLineDash([6, 4]);
+    pathRR(ctx, s.x - 30, s.y - 54, 60, 94, 6);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   ctx.save();
   ctx.translate(x, yb);
@@ -2047,6 +2735,43 @@ function drawZombie(z){
     ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1;
     pathRR(ctx, -12, -50, 22, 15, 3); ctx.stroke();
   }
+  if(z.key === 'brute'){
+    // 暴君巨尸：厚重肩甲 + 骨刺 + 铁箍
+    ctx.fillStyle = '#3b3340';
+    pathRR(ctx, -20, -56, 14, 14, 3); ctx.fill(); ol(1.4);
+    pathRR(ctx, 7, -58, 14, 14, 3); ctx.fill(); ol(1.4);
+    ctx.fillStyle = '#2a232e';
+    pathRR(ctx, -15, -34, 31, 12, 3); ctx.fill(); ol(1.3);
+    ctx.strokeStyle = 'rgba(220,210,240,0.55)';
+    ctx.lineWidth = 2;
+    for(let i = 0; i < 3; i++){
+      const bx = -14 + i * 11;
+      ctx.beginPath(); ctx.moveTo(bx, -58); ctx.lineTo(bx + 3, -74); ctx.lineTo(bx + 7, -58); ctx.closePath();
+      ctx.stroke();
+    }
+    // 胸口熔光
+    const bp = 0.6 + 0.4 * Math.sin(G.time * 3);
+    ctx.save();
+    ctx.shadowColor = '#ff7a4d'; ctx.shadowBlur = 18 * bp;
+    ctx.fillStyle = 'rgba(255,140,90,' + (0.45 + 0.4 * bp) + ')';
+    ctx.beginPath(); ctx.arc(-1, -45, 6.5, 0, 6.3); ctx.fill();
+    ctx.restore();
+  }
+  if(z.key === 'spitter'){
+    // 喷毒僵尸：背上鼓包 + 口部毒液
+    ctx.fillStyle = '#3f5b2e';
+    ctx.beginPath(); ctx.ellipse(-14, -44, 9, 13, -0.3, 0, 6.3); ctx.fill(); ol(1.3);
+    const sg = ctx.createRadialGradient(-14, -46, 1, -14, -46, 10);
+    sg.addColorStop(0, 'rgba(190,255,120,0.75)'); sg.addColorStop(1, 'rgba(120,200,70,0)');
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.arc(-14, -46, 10, 0, 6.3); ctx.fill();
+    const mouthGlow = 0.4 + 0.6 * Math.abs(Math.sin(G.time * 4 + z.id));
+    ctx.save();
+    ctx.shadowColor = '#9dff70'; ctx.shadowBlur = 10 * mouthGlow;
+    ctx.fillStyle = 'rgba(180,255,120,' + (0.35 + 0.45 * mouthGlow) + ')';
+    ctx.beginPath(); ctx.arc(-12, -59, 3.4, 0, 6.3); ctx.fill();
+    ctx.restore();
+  }
   if(z.isBoss){
     // 肩甲尖刺
     ctx.fillStyle = '#3a1a24';
@@ -2071,6 +2796,33 @@ function drawZombie(z){
     ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(bx - 1, by - 1, w + 2, h + 2);
     ctx.fillStyle = z.hp / z.maxHp > 0.45 ? '#8ee06a' : '#ffb545';
     ctx.fillRect(bx, by, w * clamp(z.hp / z.maxHp, 0, 1), h);
+  }
+}
+
+/* ------- 酸液弹（喷毒僵尸隔墙攻击） ------- */
+function drawSpits(){
+  for(const sp of G.spits){
+    const k = clamp(sp.t / sp.dur, 0, 1);
+    const px = sp.x + (sp.tx - sp.x) * k;
+    const py = sp.y + (sp.ty - sp.y) * k - Math.sin(k * Math.PI) * 54;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    // 拖尾
+    for(let i = 1; i <= 4; i++){
+      const kk = Math.max(0, k - i * 0.055);
+      const tx2 = sp.x + (sp.tx - sp.x) * kk;
+      const ty2 = sp.y + (sp.ty - sp.y) * kk - Math.sin(kk * Math.PI) * 54;
+      ctx.fillStyle = 'rgba(150,255,110,' + (0.28 - i * 0.055) + ')';
+      ctx.beginPath(); ctx.arc(tx2, ty2, 5.2 - i * 0.9, 0, 6.3); ctx.fill();
+    }
+    // 酸液球
+    const g = ctx.createRadialGradient(px, py, 0, px, py, 11);
+    g.addColorStop(0, 'rgba(225,255,185,0.95)');
+    g.addColorStop(0.45, 'rgba(140,235,85,0.7)');
+    g.addColorStop(1, 'rgba(80,170,45,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(px, py, 11, 0, 6.3); ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -2208,7 +2960,7 @@ function drawWeather(){
 
 /* ------- 投放预览 ------- */
 function drawDeployGhost(){
-  if(G.phase !== 'playing' || !G.sel || G.hoverLane < 0) return;
+  if(G.phase !== 'playing' || !G.sel || G.hoverLane < 0 || G.swapArmed) return;
   const def = SOLDIERS[G.sel];
   const lane = G.hoverLane;
   const used = G.soldiers.filter(s => s.lane === lane).map(s => s.slot);
@@ -2313,30 +3065,51 @@ function laneAt(y){
 }
 
 cv.addEventListener('mousemove', e => {
-  if(G.phase !== 'playing'){ G.hoverLane = -1; return; }
+  if(G.phase !== 'playing'){ G.hoverLane = -1; G.hoverSoldier = null; return; }
   const p = evtPos(e);
   G.hoverLane = laneAt(p.y);
+  G.hoverSoldier = null;
+  if(G.swapArmed && G.hoverLane >= 0){
+    for(const s of G.soldiers){
+      if(s.lane !== G.hoverLane) continue;
+      if(Math.abs(s.x - p.x) < 38){ G.hoverSoldier = s.id; break; }
+    }
+  }
 });
-cv.addEventListener('mouseleave', () => { G.hoverLane = -1; });
+cv.addEventListener('mouseleave', () => { G.hoverLane = -1; G.hoverSoldier = null; });
 
 cv.addEventListener('click', e => {
   if(G.phase !== 'playing') return;
   const p = evtPos(e);
   const lane = laneAt(p.y);
-  if(lane >= 0) deploy(lane);
+  if(lane >= 0){
+    if(G.swapArmed) trySwap(lane, p.x);
+    else deploy(lane);
+  }
   if(!muted) bgmStart();
 });
 
 window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
   if(e.key >= '1' && e.key <= '4'){
     if(G.phase === 'playing') selectSoldier(ORDER[parseInt(e.key, 10) - 1]);
     e.preventDefault();
-  } else if(e.key === ' ' || e.key.toLowerCase() === 'p'){
+  } else if(k === 'q'){
+    if(G.phase === 'playing') pushLine();
+    e.preventDefault();
+  } else if(k === 'w'){
+    if(G.phase === 'playing') armSwap();
+    e.preventDefault();
+  } else if(k === 'e'){
+    if(G.phase === 'playing') useRepair();
+    e.preventDefault();
+  } else if(e.key === ' ' || k === 'p'){
     if(G.phase === 'playing') doPause();
     else if(G.phase === 'paused') doResume();
     e.preventDefault();
   } else if(e.key === 'Escape'){
-    if(G.phase === 'playing') doPause();
+    if(G.swapArmed){ G.swapArmed = false; syncTools(); }
+    else if(G.phase === 'playing') doPause();
     else if(G.phase === 'paused') doResume();
   }
 });
@@ -2362,6 +3135,9 @@ document.getElementById('btnMute').addEventListener('click', function(){
   toggleMute();
   if(!muted) sfx('deploy');
 });
+document.getElementById('toolPush').addEventListener('click', function(){ pushLine(); });
+document.getElementById('toolSwap').addEventListener('click', function(){ armSwap(); });
+document.getElementById('toolRepair').addEventListener('click', function(){ useRepair(); });
 document.getElementById('btnStart').addEventListener('click', () => {
   AC();
   bgmStart();
@@ -2386,17 +3162,23 @@ document.getElementById('btnBack').addEventListener('click', () => {
 });
 
 /* ------- 每帧 UI 同步 ------- */
-const hudCache = {hp:-1, en:-1, wave:-1, boss:-1};
+const hudCache = {hp:-1, en:-1, wave:-1, boss:-1, slow:-1};
 function syncUI(){
   if(!G.level || G.phase === 'menu') return;
   const hp = Math.max(0, Math.round(G.baseHp));
-  if(hp !== hudCache.hp){
-    hudCache.hp = hp;
-    document.getElementById('hpNum').textContent = hp;
-    const pct = clamp(G.baseHp / G.baseMax * 100, 0, 100);
+  const hpKey = G.wallBroken ? 'broken' : hp;
+  if(hpKey !== hudCache.hp){
+    hudCache.hp = hpKey;
+    document.getElementById('hpNum').textContent = G.wallBroken ? '已破' : hp;
+    const pct = G.wallBroken ? 0 : clamp(G.baseHp / G.baseMax * 100, 0, 100);
     const el = document.getElementById('hpFill');
     el.style.width = pct + '%';
     el.style.filter = pct < 35 ? 'saturate(1.6) brightness(1.05)' : '';
+  }
+  const slowPct = Math.round((1 - slowMul()) * 100);
+  if(slowPct !== hudCache.slow){
+    hudCache.slow = slowPct;
+    document.getElementById('slowNum').textContent = slowPct + '%';
   }
   const en = Math.floor(G.energy);
   if(en !== hudCache.en){
@@ -2421,6 +3203,7 @@ function syncUI(){
     }
   }
   syncDock();
+  syncTools();
 }
 
 /* ------- 局间门禁：每玩 5 分钟答一题 ------- */

@@ -201,7 +201,7 @@
             state.answered = true;
             state.score++;
             state.streak++;
-            /* 每答满 10 题记一次完整游戏：玩满 4 次，本游戏休息 30 分钟 */
+            /* 每答满 10 题记一次完整游戏：玩满 5 次，本游戏休息 15 分钟 */
             if (state.qNo > 0 && state.qNo % 10 === 0 && window.GameLimit) {
                 window.GameLimit.count('poem');
             }

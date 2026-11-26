@@ -24,13 +24,13 @@ _build_zombie/  _test-*.html           ← 开发层：生成工作区与自检�
 
 | 形态 | 代表 | 特征 |
 | --- | --- | --- |
-| 单文件 | `zombie-defense/士兵打僵尸.html`（≈100 KB，内联 CSS/JS） | 便于整份拷走、分享；但改动定位难，搜索靠关键字 |
-| 分模块 | `pvz/` `gun-game/` `typing-game/` `twenty-four/` | `config → util → audio → assets → entities → world → render → ui → game → app` 顺序加载，全部挂在一个 `window.XXX` 命名空间下 |
+| 单文件 | `zombie-defense/zombie-defense.html`（≈100 KB，内联 CSS/JS） | 便于整份拷走、分享；但改动定位难，搜索靠关键字 |
+| 分模块 | `pvz/` `gun-game/` `typing-game/` `twenty-four/` `sailing/` | `config → util → audio → assets → entities → world → render → ui → game → app` 顺序加载，全部挂在一个 `window.XXX` 命名空间下（`sailing/` 精简为 `config → audio → game`） |
 
 分模块形态的固定约定：
 
 1. **脚本顺序即依赖顺序**，全部写在页面底部，不用 `defer`/`async`，不用 ESM。
-2. **单一全局命名空间**（`window.PVZ`、`window.GG`、`window.TF24`、`window.PoemData`），跨文件通信走它，不散落全局变量。
+2. **单一全局命名空间**（`window.PVZ`、`window.GG`、`window.TF24`、`window.PoemData`、`window.SAIL`），跨文件通信走它，不散落全局变量。
 3. `config.js` 只放数值与关卡表；`render.js` 只读状态、不改逻辑；`world.js` 是唯一权威状态。
 4. 需要外部工具（校验、批处理）时放 `tools/`，用 Node/Python 直接跑，不进入页面。
 
@@ -76,16 +76,16 @@ _build_zombie/  _test-*.html           ← 开发层：生成工作区与自检�
 | `tf24.mode.v1` / `tf24.music.v1` / `tf24.stats.v1` | 游戏 | 模式、音乐、战绩 |
 | `poem.best.v1` / `poem.sound.v1` | 游戏 | 最高连对 / 音效 |
 | `shutu.english.v1` | 游戏 | 八关进度：`levels.<id>.{best, stars, plays}` |
+| `shutu.sailing.v1` / `.mute.v1` / `.music.v1` | 游戏 | `stars`、`best`（各关最佳用时）、`assist`（帆角提示开关）/ 音效 / BGM |
 
 约定：共享键用 `shutu.<模块>.v1`；游戏键用 `shutu.<game-id>.v<N>`；早期小游戏用 `<game>.<field>.v1`（如 `poem.*`、`tf24.*`）属历史遗留，**新游戏统一走 `shutu.<id>.vN`**。
 
 ## 5. 索引页结构
 
-`index.html` 由三块组成，改卡片时三块都要照顾到：
+`index.html` 由两块组成，改卡片时两块都要照顾到：
 
-1. **页头**：标题、副标题、两条规则文案（必须与实际参数一致：30/10、4 次/30 分钟）。
-2. **最新上架位**（`a.spotlight`）：只放最新一款，进首页即可见，需带 `NEW` 角标。
-3. **卡片网格**（`main.grid`）：每张卡 `a.card[data-game]`，含封面、`card-index` 编号、名称、描述、标签、进入提示；封面固定取自 `covers/<id>.jpg`。
+1. **页头**：标题、副标题、两条规则文案（必须与实际参数一致：30/10、5 次/15 分钟）。
+2. **卡片网格**（`main.grid`）：每张卡 `a.card[data-game]`，含封面、`card-index` 编号、名称、描述、标签、进入提示；封面固定取自 `covers/<id>.jpg`。网格下方是页脚，硬编码「共 N 个游戏」，新增游戏时需手动改。
 
 `limit.js` 在首页会扫描所有 `a.card` 挂锁屏与倒计时，因此**卡片必须带 `data-game`，且 id 与 `limit/limit.js` 的 `GAMES` 表一致**，否则该游戏的限次状态不会在首页显示。
 

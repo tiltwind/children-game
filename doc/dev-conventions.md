@@ -15,7 +15,8 @@
 | --- | --- |
 | 游戏目录 | 小写短横线：`gun-game/`、`typing-game/`、`twenty-four/` |
 | 游戏 id | 与目录同名，且必须与 `index.html` 的 `data-game`、`limit/limit.js` 的 `GAMES`、封面文件名三者一致 |
-| 主页面 | `<id>.html`（`zombie-defense` 历史页面名为 `士兵打僵尸.html`，已登记在 `limit` 与首页） |
+| 文件名 | **只用英文（ASCII）字符**，一律小写短横线，禁止中文文件名；新增文件不得带中文、空格、大写 |
+| 主页面 | `<id>.html`（如 `zombie-defense/zombie-defense.html`） |
 | 分模块 | `config.js` `util.js` `audio.js` `assets.js` `entities.js` `world.js` `render.js` `hud.js` `ui.js` `game.js` `app.js` |
 | 样式 | 单页一份 `<game>.css`；组件样式进 `css/`（如 `twenty-four/css/board.css`） |
 | 工具脚本 | `tools/` 下，Node 校验用 `validate-levels.js` / `test-*.js`，素材处理用 `prepare_*.py` |

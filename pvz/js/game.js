@@ -249,7 +249,7 @@ window.PVZ = window.PVZ || {};
 
   Game.prototype.onWin = function (data) {
     this.state = "win";
-    /* 通过一关记一次完整游戏：玩满 4 关，本游戏休息 30 分钟 */
+    /* 通过一关记一次完整游戏：玩满 5 关，本游戏休息 15 分钟 */
     if (window.GameLimit) window.GameLimit.count("pvz");
     PVZ.Audio.stopBGM();
     var stars = this.computeStars(this.world);

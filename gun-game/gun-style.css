@@ -202,6 +202,41 @@ body {
   background: linear-gradient(90deg, var(--amber), var(--amber-hi));
   transition: width .2s;
 }
+/* 目标卡第二行：增援波次 / 场上敌人 / 圈内计时这类「数字」，和行动提示分开 */
+.obj-sub {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.5;
+  letter-spacing: .04em;
+  color: rgba(201, 165, 107, .82);
+}
+.obj-sub:empty { display: none; }
+/* 屏幕上方居中的「现在该做什么」，随状态变色 */
+.hud-callout {
+  position: absolute;
+  left: 50%;
+  bottom: 140px;
+  transform: translateX(-50%);
+  max-width: min(660px, 64%);
+  padding: 7px 16px;
+  font-size: 12.5px;
+  letter-spacing: .08em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffd98a;
+  background: rgba(10, 9, 8, .78);
+  border: 1px solid rgba(232, 180, 83, .28);
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity .25s, border-color .25s, color .25s;
+}
+.hud-callout.is-show { opacity: 1; }
+.hud-callout.tone-warn { color: #f0b09a; border-color: rgba(205, 91, 69, .45); }
+.hud-callout.tone-accel { color: #9be6b8; border-color: rgba(127, 211, 161, .4); }
+.hud-callout.tone-open { color: #9be6b8; border-color: rgba(127, 211, 161, .5); }
 .stealth-tag {
   align-self: flex-start;
   font-size: 10px;
@@ -870,5 +905,6 @@ body {
   .hud-left-bottom, .hud-right-bottom { transform: scale(.88); }
   .hud-left-bottom { transform-origin: bottom left; }
   .hud-right-bottom { transform-origin: bottom right; }
+  .hud-callout { bottom: 118px; max-width: 88%; font-size: 11px; padding: 6px 10px; }
   .gg-foot span:first-child { display: none; }
 }

@@ -21,6 +21,7 @@
     raf: 0,
     gate: null,
     firing: false,
+    aiming: false,
     dodgeReq: false,
     keys: {},
     mouse: { x: 480, y: 300, down: false },
@@ -162,6 +163,12 @@
 
     game.world.toastCb = function (t) { UI.toast(t); };
     game.world.bannerCb = function (t) { UI.banner(t); };
+    // 补给只作用于这一局：进场即消耗，避免买一次就永久多带
+    if (game.profile.supplies.grenade > 0 || game.profile.supplies.medkit > 0) {
+      game.profile.supplies.grenade = 0;
+      game.profile.supplies.medkit = 0;
+      save();
+    }
     game.mission = mission;
     game.state = 'playing';
     game.paused = { gate: false, rest: false, user: false };
@@ -228,6 +235,7 @@
     } else if (!game.paused.gate && !game.paused.rest) {
       game.paused.user = true;
       game.firing = false;
+      game.aiming = false;
       UI.showPause();
     }
   }
@@ -265,7 +273,8 @@
     if (dt > 0.05) dt = 0.05;
     if (dt <= 0) dt = 1 / 60;
 
-    if (game.gate && typeof game.gate.tick === 'function') game.gate.tick(dt);
+    // 门禁只统计真正在玩的时间：暂停与强制休息期间不推进
+    if (!isPaused() && game.gate && typeof game.gate.tick === 'function') game.gate.tick(dt);
 
     var w = game.world;
     if (!isPaused()) {
@@ -295,6 +304,7 @@
         down: !!(k.KeyS || k.ArrowDown),
         sprint: !!(k.ShiftLeft || k.ShiftRight),
         dodge: game.dodgeReq,
+        aim: !!game.aiming,
         interacting: !!k.KeyE
       };
 
@@ -354,10 +364,6 @@
     var total = reward + gBonus + dBonus;
 
     game.profile.credits += total;
-    if (first) {
-      game.profile.supplies.grenade = 0;
-      game.profile.supplies.medkit = 0;
-    }
     var rec = game.profile.missions[mission.id] || { done: false, best: '', time: 0, plays: 0 };
     rec.done = true;
     rec.best = UI.bestGrade(rec.best, grade);
@@ -401,6 +407,15 @@
 
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mousedown', function (e) {
+      if (e.button === 2) {
+        // 右键：精确步枪开镜（按住生效）
+        e.preventDefault();
+        Audio.init();
+        if (game.state !== 'playing' || isPaused()) return;
+        game.aiming = true;
+        onMove(e);
+        return;
+      }
       if (e.button !== 0) return;
       e.preventDefault();
       Audio.init();
@@ -408,7 +423,10 @@
       game.firing = true;
       onMove(e);
     });
-    window.addEventListener('mouseup', function () { game.firing = false; });
+    window.addEventListener('mouseup', function (e) {
+      if (e.button === 2) game.aiming = false;
+      else game.firing = false;
+    });
     canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
     canvas.addEventListener('wheel', function (e) {
@@ -439,7 +457,8 @@
       Audio.init();
 
       if (game.state !== 'playing') {
-        if (code === 'Escape' && game.state === 'briefing') goMenu();
+        if (code === 'Escape' &&
+            (game.state === 'briefing' || game.state === 'shop' || game.state === 'results')) goMenu();
         return;
       }
       if (isPaused()) {
@@ -471,6 +490,7 @@
     window.addEventListener('blur', function () {
       game.keys = {};
       game.firing = false;
+      game.aiming = false;
       if (game.state === 'playing' && !isPaused()) togglePause();
     });
 

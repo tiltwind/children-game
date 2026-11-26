@@ -249,7 +249,7 @@
 
     function onSolved(info) {
         state.solved = true;
-        /* 解出一题记一次完整游戏：玩满 4 题，本游戏休息 30 分钟 */
+        /* 解出一题记一次完整游戏：玩满 5 题，本游戏休息 15 分钟 */
         if (window.GameLimit) window.GameLimit.count('twenty-four');
 
         var stats = readStats();

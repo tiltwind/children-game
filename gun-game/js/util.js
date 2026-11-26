@@ -36,6 +36,17 @@
   };
   U.uid = function () { return Math.random().toString(36).slice(2, 9); };
 
+  // 屏幕上「往哪走」的统一口径：八方向文案 + 米数（1 格 = 40px = 1 米）
+  U.DIR8 = ['东', '东南', '南', '西南', '西', '西北', '北', '东北'];
+  U.dir8 = function (dx, dy) {
+    var oct = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));
+    return U.DIR8[(oct + 8) % 8];
+  };
+  U.meters = function (px) {
+    var tile = (GG.C && GG.C.TILE) || 40;
+    return Math.max(1, Math.round(px / tile));
+  };
+
   U.load = function (key, fallback) {
     try {
       var raw = localStorage.getItem(key);

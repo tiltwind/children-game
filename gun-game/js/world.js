@@ -43,7 +43,17 @@
     this.extractionOpen = false;
     this.extractionT = 0;
     this.interact = null;
+    this.interactNear = null;
     this.interactT = 0;
+    this.chains = [];
+    this.hurtDir = 0;
+    this.hurtDirT = 0;
+    this.commanderAlarm = false;
+    this.commanderAlarmT = 0;
+    // 全队共享情报：最后一次目击的坐标。live=true 表示此刻有人正看着玩家，
+    // 坐标每帧刷新；失去接触后保留最后位置，供全队搜索。
+    this.intel = { x: this.map.playerStart.x, y: this.map.playerStart.y, live: false, t: 0 };
+    this.alertCd = 0;
     this.hitMarker = 0;
     this.killMarker = 0;
     this.shakeT = 0;
@@ -63,6 +73,11 @@
     this.spawnQueue = [];
     this.bossAddT = mission.bossAdds ? mission.bossAdds.interval : 0;
     this.enemyTotal = 0;
+    // 引导系统状态：清场加速、撤离点未开放提示的节流、当前「该做什么」提示
+    this.accel = false;
+    this.extractHintCd = 0;
+    this.emptyAnnounced = false;
+    this.guide = { text: '', tone: 'run', target: null, inZone: false };
     this.initEnemies();
   }
 
@@ -71,6 +86,26 @@
     this.map.enemySpawns.forEach(function (s) {
       self.spawnEnemy(s.type, (s.cx + 0.5) * TILE + U.rand(-8, 8), (s.cy + 0.5) * TILE + U.rand(-8, 8));
     });
+  };
+
+  World.prototype.aliveCount = function () {
+    var n = 0;
+    for (var i = 0; i < this.enemies.length; i++) if (this.enemies[i].alive) n++;
+    return n;
+  };
+
+  // 计划内的波次是否已经全部入场（增援不会再来了）
+  World.prototype.wavesDone = function () {
+    var m = this.mission;
+    return !m.waves || !m.waves.length || this.waveIndex >= m.waves.length;
+  };
+
+  World.prototype.extractCenter = function () {
+    // 撤离点与降落圈合并的关卡（extractInZone）：圈心就是停机坪
+    if (this.mission.extractInZone && this.map.zone) return { x: this.map.zone.x, y: this.map.zone.y };
+    var e = this.map.extract;
+    if (!e) return null;
+    return { x: e.x + e.w / 2, y: e.y + e.h / 2 };
   };
 
   World.prototype.play = function (name, vol) {
@@ -98,9 +133,34 @@
   };
 
   World.prototype.onEnemyAlert = function (e) {
-    this.stats.alerts++;
-    this.alertNear(e.x, e.y, 320, e);
+    // 同一次交火不重复累加警报：评级按「被发现了几次」算，而不是按惊动了多少人
+    if (this.alertCd <= 0) {
+      this.stats.alerts++;
+      this.alertCd = 5;
+    }
     if (e.type === 'm') this.play('alert', 0.5);
+  };
+
+  // 全队电台：任意一名敌人看见玩家，立刻把实时坐标同步给所有同伴。
+  // 已经警觉的更新目击点，还没被惊动的直接叫醒一起压上——不会有人站在原地发呆。
+  World.prototype.reportSight = function (source) {
+    var p = this.player;
+    this.intel.x = p.x;
+    this.intel.y = p.y;
+    this.intel.live = true;
+    this.intel.t = 0;
+    if (!C.AI.radio) return;
+    for (var i = 0; i < this.enemies.length; i++) {
+      var e = this.enemies[i];
+      if (!e.alive || e === source) continue;
+      if (!e.alerted) {
+        Ent.alertEnemy(e, this, p.x, p.y);
+      } else {
+        e.lastSeen.x = p.x;
+        e.lastSeen.y = p.y;
+        e.lastSeenT = 0;
+      }
+    }
   };
 
   World.prototype.alertNear = function (x, y, radius, source) {
@@ -113,10 +173,13 @@
   };
 
   World.prototype.noise = function (x, y, radius, label) {
+    // 响枪（冲锋枪 / 霰弹枪 / 精确步枪）整层楼都听得见，会全员压过来；
+    // 消音手枪、脚步这类小半径噪声只惊动附近的人。
+    var wholeFloor = radius >= C.AI.loudNoise;
     for (var i = 0; i < this.enemies.length; i++) {
       var e = this.enemies[i];
       if (!e.alive) continue;
-      if (U.dist(e.x, e.y, x, y) > radius) continue;
+      if (!wholeFloor && U.dist(e.x, e.y, x, y) > radius) continue;
       if (e.alerted) {
         e.lastSeen.x = x; e.lastSeen.y = y; e.lastSeenT = 0;
       } else {
@@ -182,8 +245,10 @@
     this.addParticle('casing', p.x, p.y, Math.cos(ca) * U.rand(60, 100), Math.sin(ca) * U.rand(60, 100), 0.6, 2, '#d8b46a', 80);
 
     var anyHit = false;
+    // 开镜期间散布归零（扩散与累计 bloom 一起忽略）
+    var baseSpread = (w.scope && p.scoped) ? 0 : (w.spread + p.bloom);
     for (var i = 0; i < w.pellets; i++) {
-      var spread = w.spread + p.bloom;
+      var spread = baseSpread;
       var ang = p.angle + (Math.random() + Math.random() - 1) * spread;
       var dx = Math.cos(ang), dy = Math.sin(ang);
       var wall = this.map.raycast(mx, my, dx, dy, w.range);
@@ -239,7 +304,7 @@
   World.prototype.applyDamage = function (e, dmg, info) {
     if (!e || !e.alive) return false;
     var shielded = false;
-    if (e.def.shield) {
+    if (e.def.shield && !(info && info.ignoreShield)) {
       var from = Math.atan2(info.y - e.y, info.x - e.x);
       // 玩家在敌人正面扇区内 → 盾牌生效（Boss 同理）
       var diff = Math.abs(U.angleDiff(e.angle, from));
@@ -314,7 +379,9 @@
   World.prototype.fireEnemyShot = function (e, baseAngle) {
     if (!e.alive) return;
     var def = e.def;
-    var a = baseAngle + (Math.random() + Math.random() - 1) * (def.spread || 0.05);
+    // 指挥官光环同时收紧队友的弹道散布，表现为“打得更准”
+    var spread = (def.spread || 0.05) * (e.buffed ? 0.8 : 1);
+    var a = baseAngle + (Math.random() + Math.random() - 1) * spread;
     var mx = e.x + Math.cos(a) * (e.r + 6);
     var my = e.y + Math.sin(a) * (e.r + 6);
     var speed = def.laser ? 900 : 620;
@@ -335,6 +402,11 @@
   World.prototype.hurtPlayer = function (dmg, source) {
     var p = this.player;
     if (!p.alive || p.ifr > 0) return;
+    // 记录受击来向，供屏幕上的方向指示使用（爆炸会传冲击点坐标）
+    if (source && isFinite(source.x) && isFinite(source.y)) {
+      this.hurtDir = Math.atan2(source.y - p.y, source.x - p.x);
+      this.hurtDirT = 1;
+    }
     var armorPart = Math.min(p.armor, dmg * 0.6);
     p.armor -= armorPart;
     var real = dmg - armorPart;
@@ -466,7 +538,7 @@
     var p = this.player;
     if (p.alive && U.dist(x, y, p.x, p.y) < radius && this.map.los(x, y, p.x, p.y, radius)) {
       var f = 1 - U.dist(x, y, p.x, p.y) / radius;
-      this.hurtPlayer(dmg * 0.55 * f, null);
+      this.hurtPlayer(dmg * 0.55 * f, { x: x, y: y });
     }
     for (var e = 0; e < this.enemies.length; e++) {
       var en = this.enemies[e];
@@ -475,18 +547,16 @@
       if (d > radius) continue;
       if (!this.map.los(x, y, en.x, en.y, radius)) continue;
       var fall = 1 - d / radius;
-      this.applyDamage(en, dmg * (0.45 + fall * 0.7), { x: en.x, y: en.y, angle: 0 });
+      // 爆炸是范围冲击，明确绕过正面盾牌（重装兵与 Boss 都吃满伤害）
+      this.applyDamage(en, dmg * (0.45 + fall * 0.7), { x: en.x, y: en.y, angle: 0, ignoreShield: true });
     }
     for (var j = 0; j < this.map.props.length; j++) {
       var pr = this.map.props[j];
       if (!pr.alive || pr.type === 'terminal') continue;
       if (U.dist(x, y, pr.x, pr.y) > radius + pr.r) continue;
       if (pr.type === 'barrel') {
-        // 连锁引爆稍作延迟，视觉上更像连锁
-        var self = this;
-        setTimeout(function (prop) {
-          if (prop.alive) self.damageProp(prop, 999, { x: prop.x, y: prop.y });
-        }, 90);
+        // 连锁引爆交给主循环逐帧推进：暂停/结算后不会再用真实时间偷偷炸
+        this.chains.push({ prop: pr, t: 0.09 });
       } else {
         this.damageProp(pr, 999, { x: pr.x, y: pr.y });
       }
@@ -498,19 +568,36 @@
   };
 
   /* ---------------- 交互 / 目标 ---------------- */
+  // 终端按“格子边缘”判定：斜着站在旁边、或贴着格子边走都能接入，
+  // 同时要求到最近边缘点有视线，避免隔着一堵墙按 E
+  World.prototype.terminalInReach = function (t, p) {
+    var rx = t.cx * TILE, ry = t.cy * TILE;
+    var nx = U.clamp(p.x, rx, rx + TILE);
+    var ny = U.clamp(p.y, ry, ry + TILE);
+    var d = U.dist(p.x, p.y, nx, ny);
+    if (d > C.PLAYER.interactRange) return false;
+    return this.map.los(p.x, p.y, nx, ny, C.PLAYER.interactRange + 8);
+  };
+
   World.prototype.updateInteract = function (dt, held) {
     var p = this.player;
     this.interact = null;
+    this.interactNear = null;
     this.interactT = 0;
-    if (!p.alive || !held) return;
+    if (!p.alive) return;
+    // 先找附近未接入的终端：即使没按 E 也要能给出“按住 E 接入”的提示
     var best = null, bd = 999;
     for (var i = 0; i < this.terminals.length; i++) {
       var t = this.terminals[i];
       if (t.hacked) continue;
-      var d = U.dist(p.x, p.y, t.x, t.y);
-      if (d < C.PLAYER.interactRange && d < bd) { best = t; bd = d; }
+      if (!this.terminalInReach(t, p)) continue;
+      var rx = t.cx * TILE, ry = t.cy * TILE;
+      var d = U.dist(p.x, p.y, U.clamp(p.x, rx, rx + TILE), U.clamp(p.y, ry, ry + TILE));
+      if (d < bd) { best = t; bd = d; }
     }
     if (!best) return;
+    this.interactNear = best;
+    if (!held || p.reloading > 0) return;
     this.interact = best;
     this.interactT = best.progress || 0;
     best.progress = this.interactT + dt;
@@ -547,7 +634,11 @@
   World.prototype.updateWaves = function (dt) {
     var m = this.mission;
     if (!m.waves || !m.waves.length) return;
-    while (this.waveIndex < m.waves.length && this.elapsed >= m.waves[this.waveIndex].at) {
+    // 防守关的波次跟随「圈内累计坚守时间」，而不是真实耗时：
+    // 玩家在圈外拖延不会再让敌人提前放完，也就不会出现「人打光了、计时却没满」的空场。
+    var clock = (m.objective.type === 'defend' && m.waveClock === 'hold')
+      ? this.objective.holdT : this.elapsed;
+    while (this.waveIndex < m.waves.length && clock >= m.waves[this.waveIndex].at) {
       var w = m.waves[this.waveIndex];
       var pt = this.map.wavePoints[w.point] || this.map.wavePoints[0];
       if (!pt) { this.waveIndex++; continue; }
@@ -565,6 +656,72 @@
       });
     }
     this.toast('敌方增援 '+count+' 人');
+  };
+
+  /* ---------------- 指挥官光环 ---------------- */
+  World.prototype.updateAuras = function () {
+    var cmds = [];
+    var i, j, k;
+    for (i = 0; i < this.enemies.length; i++) {
+      var e = this.enemies[i];
+      if (e.alive && e.def && e.def.behavior === 'commander') cmds.push(e);
+    }
+    var range = 300;
+    var mul = (C.ENEMIES.k && C.ENEMIES.k.buff) || 1.18;
+    for (j = 0; j < this.enemies.length; j++) {
+      var en = this.enemies[j];
+      if (!en.alive) continue;
+      var buffed = false;
+      if (en.def && en.def.behavior !== 'commander') {
+        for (k = 0; k < cmds.length; k++) {
+          if (U.dist(en.x, en.y, cmds[k].x, cmds[k].y) <= range) { buffed = true; break; }
+        }
+      }
+      en.buffed = buffed;
+      en.buffMul = buffed ? mul : 1;
+    }
+  };
+
+  /* ---------------- 指挥官共享视野 ---------------- */
+  // 指挥官只要直线无遮挡看到玩家，全体士兵同时锁定玩家位置
+  World.prototype.commanderWatch = function (dt) {
+    var p = this.player;
+    var k = null;
+    for (var i = 0; i < this.enemies.length; i++) {
+      var e = this.enemies[i];
+      if (e.alive && e.def && e.def.behavior === 'commander' && Ent.canSee(e, p, this.map)) {
+        k = e;
+        break;
+      }
+    }
+    if (!k) {
+      this.commanderAlarm = false;
+      this.commanderAlarmT = 0;
+      return;
+    }
+    if (!this.commanderAlarm) {
+      this.commanderAlarm = true;
+      this.commanderAlarmT = 0;
+      this.toast('指挥官发现了你 · 全员压上');
+      this.play('alert', 0.9);
+      this.alertAllByCommander();
+      return;
+    }
+    // 指挥官持续盯着你时，每 0.6 秒刷新一次全员共享的位置
+    this.commanderAlarmT += dt;
+    if (this.commanderAlarmT >= 0.6) {
+      this.commanderAlarmT = 0;
+      this.alertAllByCommander();
+    }
+  };
+
+  World.prototype.alertAllByCommander = function () {
+    var p = this.player;
+    for (var j = 0; j < this.enemies.length; j++) {
+      var en = this.enemies[j];
+      if (!en.alive) continue;
+      Ent.alertEnemy(en, this, p.x, p.y);
+    }
   };
 
   World.prototype.checkObjective = function () {
@@ -632,12 +789,36 @@
     var p = this.player;
     Ent.updatePlayer(p, dt, input, this);
 
+    // 全员知道玩家在哪：坐标每帧都是实时的，所有敌人从开局起就主动压上
+    if (C.AI.alwaysKnow && p.alive) {
+      this.intel.x = p.x;
+      this.intel.y = p.y;
+      this.intel.live = true;
+      this.intel.t = 0;
+      for (var a = 0; a < this.enemies.length; a++) {
+        var ea = this.enemies[a];
+        if (!ea.alive || ea.alerted) continue;
+        Ent.alertEnemy(ea, this, p.x, p.y);
+      }
+    }
+
+    // 指挥官光环：先统一刷新 buff 状态，再让敌人各自开火
+    this.updateAuras();
+    // 指挥官共享视野：发现玩家就让全员同时压上
+    this.commanderWatch(dt);
+
     this.flowT -= dt;
     if (this.flowT <= 0) {
-      this.flowT = 0.45;
-      this.map.buildFlow(p.x, p.y);
+      this.flowT = C.AI.repath;
+      // 流场建在「全队以为玩家在的位置」上：有人看得见就是实时坐标，
+      // 全员失去接触就停在最后目击点，敌人只会往知道的地方走。
+      this.map.buildFlow(this.intel.x, this.intel.y);
       this.map.reveal(p.x, p.y, 440);
     }
+    // 情报保鲜：超过 0.8 秒没人再报告目击，就当作「失去接触」
+    this.intel.t += dt;
+    if (this.intel.t > 0.8) this.intel.live = false;
+    if (this.alertCd > 0) this.alertCd -= dt;
 
     for (var i = 0; i < this.enemies.length; i++) {
       var e = this.enemies[i];
@@ -662,7 +843,7 @@
 
     this.updateBullets(dt);
     this.updateGrenades(dt);
-    this.updateInteract(dt, held && !p.reloading && this.interactAllowed !== false);
+    this.updateInteract(dt, held);
     this.updateWaves(dt);
     this.updatePickups(dt);
     this.updateFx(dt);
@@ -670,10 +851,18 @@
     // 防守计时 / 生存倒计时
     var o = this.mission.objective;
     if (o.type === 'defend') {
-      if (this.map.zone && U.dist(p.x, p.y, this.map.zone.x, this.map.zone.y) <= this.map.zone.r) {
-        this.objective.holdT += dt;
-      }
+      var inZone = !!(this.map.zone && U.dist(p.x, p.y, this.map.zone.x, this.map.zone.y) <= this.map.zone.r);
+      // 场上已清空且波次放完 → 圈内计时加速，避免玩家「杀光了只能干站着」
+      var cleared = this.aliveCount() === 0 && this.wavesDone();
+      this.accel = inZone && cleared && !this.objective.done;
+      if (inZone) this.objective.holdT += dt * (this.accel ? 1.5 : 1);
       this.objective.remain = Math.max(0, o.seconds - this.objective.holdT);
+      if (cleared && !this.objective.done && !this.emptyAnnounced) {
+        this.emptyAnnounced = true;
+        this.toast('场上敌人已清空 · 回到降落圈可加速计时');
+      } else if (!cleared) {
+        this.emptyAnnounced = false;
+      }
     } else if (o.type === 'survive') {
       this.objective.remain = Math.max(0, o.seconds - this.elapsed);
     }
@@ -702,12 +891,29 @@
     this.checkObjective();
 
     // 撤离判定
-    if (this.extractionOpen && p.alive && this.map.inExtract(p.x, p.y)) {
+    if (this.extractionOpen && p.alive && this.map.inExtractArea(p.x, p.y)) {
       this.extractionT += dt;
       if (this.extractionT > 0.5) this.win();
     } else {
       this.extractionT = 0;
     }
+
+    // 站在未开放的撤离区上：给一次解释，避免玩家以为「没反应 / 卡住了」。
+    // 撤离点与降落圈合并的关卡跳过这条——玩家整局都站在圈里，弹窗会变成噪音。
+    if (this.extractHintCd > 0) this.extractHintCd -= dt;
+    if (!this.mission.extractInZone && !this.extractionOpen && p.alive &&
+        this.map.inExtract(p.x, p.y) && this.extractHintCd <= 0) {
+      this.extractHintCd = 18;
+      if (o.type === 'defend') {
+        var cur = Math.min(o.seconds, Math.floor(this.objective.holdT));
+        this.toast('撤离点尚未开放：先在降落圈累计坚守 ' + o.seconds + ' 秒（当前 ' + cur + '/' + o.seconds + '）');
+      } else {
+        this.toast('撤离点尚未开放：先完成作战目标');
+      }
+    }
+
+    // 当前「该做什么」：HUD 与场内箭头共用同一份，避免两处口径不一致
+    this.guide = this.buildGuide();
 
     // 清理尸体
     for (var q = this.enemies.length - 1; q >= 0; q--) {
@@ -715,8 +921,87 @@
     }
   };
 
+  // 「现在该做什么」：所有关卡共用的一份引导，UI 只负责排版，
+  // 场内箭头也读同一个 target，避免文案和指向各说各话。
+  World.prototype.buildGuide = function () {
+    var o = this.mission.objective, st = this.objective, p = this.player, map = this.map;
+    var alive = this.aliveCount();
+    var g = { text: '', tone: 'run', target: null, inZone: false, accel: false };
+
+    if (this.extractionOpen) {
+      var c = this.extractCenter();
+      g.text = this.mission.extractInZone ? '撤离点已开放 · 原地登机' : '撤离点已开放 · 前往登机';
+      g.tone = 'open';
+      g.target = c ? { x: c.x, y: c.y, kind: 'extract' } : null;
+      return g;
+    }
+
+    if (o.type === 'defend' && map.zone) {
+      g.inZone = U.dist(p.x, p.y, map.zone.x, map.zone.y) <= map.zone.r;
+      g.accel = this.accel;
+      g.target = { x: map.zone.x, y: map.zone.y, kind: 'zone' };
+      if (!g.inZone) {
+        g.tone = 'warn';
+        g.text = alive > 0
+          ? '回到降落圈内 · 站进去才开始计时'
+          : '场上已清空 · 回降落圈补满 ' + U.fmt(st.remain);
+      } else if (alive === 0) {
+        g.tone = 'accel';
+        g.text = '清场加速 ×1.5 · 再守 ' + U.fmt(st.remain);
+      } else {
+        g.text = '守住降落圈 · 再守 ' + U.fmt(st.remain);
+      }
+      return g;
+    }
+
+    if (o.type === 'eliminate') {
+      if (alive === 1) {
+        // 最后一个敌人最容易「找不到」：直接把它的坐标交给 HUD 与屏外箭头
+        var last = null;
+        for (var le = 0; le < this.enemies.length; le++) {
+          if (this.enemies[le].alive) { last = this.enemies[le]; break; }
+        }
+        g.text = '最后一名敌人 · 已标出方位';
+        g.tone = 'warn';
+        g.target = last ? { x: last.x, y: last.y, kind: 'enemy' } : null;
+      } else if (alive > 0) {
+        g.text = '清除剩余敌人 · 还剩 ' + alive + ' 人';
+        g.tone = 'run';
+      } else {
+        var ec = this.extractCenter();
+        g.text = '前往撤离点';
+        g.tone = 'open';
+        g.target = ec ? { x: ec.x, y: ec.y, kind: 'extract' } : null;
+      }
+    } else if (o.type === 'hack') {
+      g.text = '接入数据节点 ' + st.hacked + '/' + st.required;
+    } else if (o.type === 'survive') {
+      g.text = '撑过追兵 · 剩余 ' + U.fmt(st.remain);
+    } else if (o.type === 'boss') {
+      var bossAlive = false;
+      for (var i = 0; i < this.enemies.length; i++) {
+        if (this.enemies[i].boss && this.enemies[i].alive) { bossAlive = true; break; }
+      }
+      g.text = bossAlive ? '击杀「铁颚」' : '前往南侧升降台撤离';
+      g.tone = bossAlive ? 'run' : 'open';
+    }
+    return g;
+  };
+
   World.prototype.updateFx = function (dt) {
     var i;
+    // 油桶连锁引爆，按帧推进（暂停时自然冻结）
+    if (this.status === 'playing') {
+      for (i = this.chains.length - 1; i >= 0; i--) {
+        var c = this.chains[i];
+        c.t -= dt;
+        if (c.t <= 0) {
+          this.chains.splice(i, 1);
+          if (c.prop && c.prop.alive) this.damageProp(c.prop, 999, { x: c.prop.x, y: c.prop.y });
+        }
+      }
+    }
+    if (this.hurtDirT > 0) this.hurtDirT = Math.max(0, this.hurtDirT - dt * 1.4);
     for (i = this.particles.length - 1; i >= 0; i--) {
       var pt = this.particles[i];
       pt.life -= dt;
@@ -753,6 +1038,7 @@
   World.prototype.tryTakedown = function () {
     var p = this.player;
     if (!p.alive) return false;
+    if (p.meleeCd > 0) return false;
     var best = null, bd = 999;
     for (var i = 0; i < this.enemies.length; i++) {
       var e = this.enemies[i];
@@ -769,12 +1055,14 @@
       this.killEnemy(best, { stealth: true });
       this.play('takedown');
       this.toast('无声处决');
+      p.meleeCd = 0.6;
       return true;
     }
     // 正面近战
     this.applyDamage(best, C.PLAYER.meleeDamage * p.damageMul, { x: best.x, y: best.y, angle: p.angle });
     this.play('takedown', 0.8);
     this.shake(0.12, 3);
+    p.meleeCd = 0.6;
     return true;
   };
 

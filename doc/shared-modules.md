@@ -84,7 +84,7 @@ function frame(ts) {
 
 ## 2. `limit/` · 单游戏限次
 
-全局：`window.GameLimit`。
+全局：`window.GameLimit`。参数：`LIMIT = 5`（次）、`LOCK_MS = 15 分钟`。
 
 ```html
 <link rel="stylesheet" href="../limit/limit.css">
@@ -149,5 +149,7 @@ document.addEventListener('playclock:breakend', resumeGame);
 | 霓虹狂飙 | ✓ | ✓ | ✓ | 口算 / 唐诗 / 英语 | 左下 |
 | 钢铁防线 | ✓ | ✓ | ✗ | 口算 / 唐诗 / 英语 | — |
 | 英语小勇士 | — | ✓ | ✓ | 本身即题型来源 | — |
+| 1024 陶片牌局 | — | ✓ | ✓ | —（回合制，未接门禁） | — |
+| 碧海扬帆 | ✓ | ✓ | ✓ | 口算 / 唐诗 | 左下 |
 
 > 钢铁防线是单文件实现，目前**未接入 playclock**；补齐时按上面第 3 节接入，并监听两个休息事件暂停主循环。

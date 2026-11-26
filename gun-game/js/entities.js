@@ -37,8 +37,9 @@
       aimX: map.playerStart.x, aimY: map.playerStart.y - 40,
       weapons: weapons, cur: 0,
       cooldown: 0, reloading: 0, reloadTotal: 0,
-      bloom: 0, stamina: P.stamina, staminaCd: 0,
+      bloom: 0, stamina: P.stamina, staminaCd: 0, scoped: false,
       dodgeT: 0, dodgeCd: 0, dodgeDir: { x: 0, y: 0 },
+      meleeCd: 0,
       ifr: 0, grenades: loadout.grenades || 0, medkits: loadout.medkits || 0,
       alive: true, moving: false, sprinting: false,
       muzzle: 0, hurtFlash: 0, stepT: 0,
@@ -83,6 +84,7 @@
     p.reloading = 0;
     p.cooldown = Math.max(p.cooldown, 0.28);
     p.bloom = 0;
+    p.scoped = false;
     if (world) world.play('ui');
   }
 
@@ -128,6 +130,7 @@
     p.cooldown = Math.max(0, p.cooldown - dt);
     p.ifr = Math.max(0, p.ifr - dt);
     p.dodgeCd = Math.max(0, p.dodgeCd - dt);
+    p.meleeCd = Math.max(0, p.meleeCd - dt);
     p.muzzle = Math.max(0, p.muzzle - dt);
     p.hurtFlash = Math.max(0, p.hurtFlash - dt * 2);
     p.bloom = Math.max(0, p.bloom - (currentWeapon(p).def.recover || 0.25) * dt);
@@ -142,6 +145,10 @@
 
     p.aimX = input.mx; p.aimY = input.my;
     p.angle = Math.atan2(input.my - p.y, input.mx - p.x);
+
+    // 精确步枪开镜：按住右键，且不在换弹 / 翻滚中
+    var wdef = currentWeapon(p).def;
+    p.scoped = !!(input.aim && wdef.scope && p.reloading <= 0 && p.dodgeT <= 0);
 
     var ix = (input.right ? 1 : 0) - (input.left ? 1 : 0);
     var iy = (input.down ? 1 : 0) - (input.up ? 1 : 0);
@@ -201,11 +208,13 @@
       wander: null, wanderT: 0, idleT: U.rand(0.6, 2.2),
       reposition: 0, cover: null, coverT: 0,
       strafe: U.chance(0.5) ? 1 : -1, strafeT: U.rand(0.8, 1.8),
+      searchSpot: null, searchT: 0,
+      faceX: null, faceY: null, detour: 0,
       alive: true, dying: 0, hitFlash: 0,
       dmgMul: (diff.enemyDmg || 1),
       buffed: false, boss: !!def.boss, phase: 1,
       bossMode: 'barrage', bossT: 3,
-      summonT: 0,
+      summonT: 14,
       angleVel: U.rand(-0.6, 0.6),
       stuck: 0, lastPos: { x: x, y: y }
     };
@@ -222,8 +231,10 @@
     var d = U.dist(e.x, e.y, p.x, p.y);
     if (d > e.def.view) return false;
     var to = Math.atan2(p.y - e.y, p.x - e.x);
-    if (e.def.fov < 360) {
-      var half = (e.def.fov * Math.PI / 180) / 2;
+    // 警觉后扇形放宽（只用于巡逻），贴身距离内直接察觉：不会出现「人就站旁边却看不见」
+    var fov = e.alerted ? Math.max(e.def.fov, C.AI.alertFov) : e.def.fov;
+    if (fov < 360 && d > C.AI.closeSense) {
+      var half = (fov * Math.PI / 180) / 2;
       if (Math.abs(U.angleDiff(to, e.angle)) > half) return false;
     }
     return map.los(e.x, e.y, p.x, p.y, e.def.view);
@@ -243,49 +254,101 @@
     e.lastSeenT = 0;
   }
 
-  function moveEnemy(e, map, dt, tx, ty, speed, world) {
-    var dx = tx - e.x, dy = ty - e.y;
-    var d = Math.hypot(dx, dy);
-    if (d < 4) return true;
-    dx /= d; dy /= d;
+  // 身体朝向：有锁定点（玩家 / 最后目击点）就一直盯着它，否则朝行进方向。
+  // 这样敌人不会一边走向玩家、一边把背留给玩家。
+  function facePoint(e, dt, moveA) {
+    var target, rate;
+    if (e.faceX != null && e.faceY != null) {
+      target = Math.atan2(e.faceY - e.y, e.faceX - e.x);
+      rate = C.AI.turnAim;
+    } else if (moveA != null) {
+      target = moveA;
+      rate = C.AI.turnMove;
+    } else {
+      return;
+    }
+    e.angle = angleLerp(e.angle, target, dt * rate);
+  }
 
-    // 与其他敌人的分离力，避免叠成一坨
+  // 撞墙后的绕行：围绕期望方向每 15° 探一次，挑「站得下、又最接近目标方向」的角度，
+  // 比原来只试左右两个切向更容易从墙角绕出来。
+  function slideAround(e, map, dirA, speed, dt) {
+    var best = null, bestScore = -2;
+    for (var i = 1; i <= 11; i++) {
+      var mag = i * Math.PI / 12;
+      for (var s = -1; s <= 1; s += 2) {
+        var a = dirA + s * mag;
+        var ux = Math.cos(a), uy = Math.sin(a);
+        var probe = e.r + 14;
+        if (map.circleHits(e.x + ux * probe, e.y + uy * probe, e.r)) continue;
+        var score = Math.cos(mag) - mag * 0.1;
+        if (e.detour === s) score += 0.14;
+        if (score > bestScore) { bestScore = score; best = { a: a, ux: ux, uy: uy, s: s }; }
+      }
+    }
+    if (!best) return null;
+    e.detour = best.s;
+    map.moveCircle(e, best.ux * speed * dt * 0.92, best.uy * speed * dt * 0.92);
+    return best;
+  }
+
+  function moveEnemy(e, map, dt, tx, ty, speed, world) {
+    var dx0 = tx - e.x, dy0 = ty - e.y;
+    var d0 = Math.hypot(dx0, dy0);
+    if (d0 < 4) { facePoint(e, dt, null); return true; }
+    var dirA = Math.atan2(dy0, dx0);
+    var dx = dx0 / d0, dy = dy0 / d0;
+
+    // 与其他敌人的分离力，避免叠成一坨（间距比贴身大一圈，追击时才不会挤成堆）
     var sx = 0, sy = 0;
     for (var i = 0; i < world.enemies.length; i++) {
       var o = world.enemies[i];
       if (o === e || !o.alive) continue;
       var ox = e.x - o.x, oy = e.y - o.y;
       var od = Math.hypot(ox, oy);
-      var min = e.r + o.r + 8;
+      var min = e.r + o.r + 26;
       if (od > 0.01 && od < min) {
         sx += (ox / od) * (min - od) / min;
         sy += (oy / od) * (min - od) / min;
       }
     }
-    dx += sx * 1.2; dy += sy * 1.2;
+    dx += sx * 1.6; dy += sy * 1.6;
     var dl = Math.hypot(dx, dy) || 1;
     dx /= dl; dy /= dl;
 
-    var vx = dx * speed, vy = dy * speed;
-    var res = map.moveCircle(e, vx * dt, vy * dt);
+    var res = map.moveCircle(e, dx * speed * dt, dy * speed * dt);
+    var moveA = dirA;
     if (res.hitX || res.hitY) {
-      // 撞墙时沿垂直方向滑一下
-      var px = -dy, py = dx;
-      map.moveCircle(e, px * speed * dt * 0.8, py * speed * dt * 0.8);
+      var slide = slideAround(e, map, dirA, speed, dt);
+      if (slide) moveA = slide.a;
       e.stuck += dt;
-      if (e.stuck > 1.2) {
-        e.stuck = 0;
-        e.strafe *= -1;
-      }
+      // 连续顶墙仍然没进展：强制换个绕行方向，避免在两堵墙之间来回抖
+      if (e.stuck > 1.4) { e.stuck = 0; e.detour = -(e.detour || 1); }
     } else {
       e.stuck = 0;
     }
-
-    // 朝移动方向转身（未交火时）
-    if (!e.alerted || !world.player.alive) {
-      e.angle = angleLerp(e.angle, Math.atan2(dy, dx), dt * 3);
-    }
+    facePoint(e, dt, moveA);
     return false;
+  }
+
+  // 追向目击点：流场按「玩家实时位置 / 最后目击点」定期重算，沿流场走能自动
+  // 绕过墙和拐角，不会像直线推进那样顶着墙发呆或原地打转。
+  function chase(e, dt, world, speed) {
+    var map = world.map;
+    var last = e.lastSeen;
+    var tx = last.x, ty = last.y;
+    // 流场永远指向「全队共享的目击点」：确认这一格的流场就是为我这个目标建的，
+    // 才沿流场走；否则（例如听到枪声去查看）走直线 + 绕墙。
+    if (map.flow && map.flowTarget) {
+      var ft = map.flowTarget;
+      var tc = map.cellAt(last.x, last.y);
+      if (tc[0] === ft.cx && tc[1] === ft.cy) {
+        var c = map.cellAt(e.x, e.y);
+        var next = map.flowDir(c[0], c[1]);
+        if (next && !next.done) { tx = next.x; ty = next.y; }
+      }
+    }
+    return moveEnemy(e, map, dt, tx, ty, speed, world);
   }
 
   function fireBurst(e, world) {
@@ -293,7 +356,8 @@
     var burst = def.burst || 1;
     e.burstLeft = burst;
     e.gapT = 0;
-    e.fireT = def.interval;
+    // 指挥官光环只加快下一轮开火节奏，不放宽开火前的预警时间（狙击激光仍保持 0.95 秒）
+    e.fireT = def.interval / (e.buffMul || 1);
     e.aimT = 0;
     if (def.laser) e.laserOn = 0.12;
     var aim = e.aimTarget;
@@ -325,10 +389,22 @@
       e.lastSeenT = 0;
       if (!e.alerted) alertEnemy(e, world, p.x, p.y);
       e.state = 'alert';
+      // 全队电台：把目击坐标同步给所有同伴（包括还没被惊动的人）
+      if (world.reportSight) world.reportSight(e);
+    }
+    // 全员知情模式：看不见也始终拿得到玩家的实时坐标，不存在「找不到目标」
+    if (C.AI.alwaysKnow && p.alive) {
+      e.lastSeen.x = p.x;
+      e.lastSeen.y = p.y;
+      e.lastSeenT = 0;
+      e.state = 'alert';
+      if (!e.alerted) alertEnemy(e, world, p.x, p.y);
     }
 
     // 感知：视野扇形缓慢扫视
     if (!e.alerted) {
+      e.faceX = null;
+      e.faceY = null;
       e.idleT -= dt;
       if (e.idleT <= 0) {
         e.idleT = U.rand(1.6, 3.6);
@@ -348,24 +424,39 @@
     // 已警觉
     var d = U.dist(e.x, e.y, p.x, p.y);
     var toPlayer = Math.atan2(p.y - e.y, p.x - e.x);
+    // 身体朝向锁定点：看得见就盯玩家本人，看不见就盯「全队以为你在的地方」。
+    // 锁定点由全队电台实时刷新，所以不会出现背对玩家推进的情况。
+    e.faceX = sees ? p.x : e.lastSeen.x;
+    e.faceY = sees ? p.y : e.lastSeen.y;
 
     if (!sees) {
-      // 追到最后目击点，找不到就搜索/冷静
+      // 全队共享的目击点：有人还看得见你，坐标就是实时的；全都看不见，就停在最后目击点
       var last = e.lastSeen;
-      var reached = U.dist(e.x, e.y, last.x, last.y) < 18;
+      var reached = !world.intel.live && U.dist(e.x, e.y, last.x, last.y) < 20;
       if (reached) {
-        if (e.lastSeenT > 7) {
+        if (e.lastSeenT > C.AI.calmTime) {
           e.alerted = false;
           e.state = 'idle';
           e.aiming = false;
           e.wander = null;
+          e.searchSpot = null;
+          e.faceX = null;
+          e.faceY = null;
+          e.angleVel = U.rand(-0.6, 0.6);
           return;
         }
-        // 到了最后目击点仍找不到人：原地搜索，缓慢转视角
-        e.angle += dt * 1.2 * e.strafe;
+        // 到了最后目击点仍找不到人：在附近散开搜索，而不是原地转圈等死
+        e.searchT -= dt;
+        if (!e.searchSpot || e.searchT <= 0 || U.dist(e.x, e.y, e.searchSpot.x, e.searchSpot.y) < 8) {
+          e.searchT = U.rand(1.6, 3.2);
+          var sf = map.randomFloorNear(Math.floor(last.x / C.TILE), Math.floor(last.y / C.TILE), 4);
+          e.searchSpot = { x: (sf.cx + 0.5) * C.TILE, y: (sf.cy + 0.5) * C.TILE };
+        }
+        if (e.searchSpot) moveEnemy(e, map, dt, e.searchSpot.x, e.searchSpot.y, e.def.speed * 0.8, world);
       } else {
-        // 只追到最后目击点，不透视玩家当前位置
-        moveEnemy(e, map, dt, last.x, last.y, e.def.speed, world);
+        // 追赶由流场带路，绕墙、绕拐角都能走到；坐标来自全队共享情报
+        e.searchSpot = null;
+        chase(e, dt, world, e.def.speed);
       }
       return;
     }
@@ -468,7 +559,10 @@
       e.summonT -= dt;
       if (e.summonT <= 0) {
         e.summonT = 14;
-        if (world.enemies.filter(function (o) { return o.alive; }).length < 20) {
+        // 关卡可以关掉指挥官的自主召唤（例如波次已经提供压力的防守关），
+        // 否则玩家永远清不完场，也永远等不到撤离。
+        if (!world.mission.noCommanderAdds &&
+            world.enemies.filter(function (o) { return o.alive; }).length < 20) {
           world.summonAdds(e.x, e.y, 'g', 2);
           world.toast('敌方指挥官呼叫了增援');
         }
@@ -480,6 +574,9 @@
   function updateBoss(e, dt, world) {
     var p = world.player, map = world.map;
     var d = U.dist(e.x, e.y, p.x, p.y);
+    // Boss 永远面向玩家：无论冲锋、后撤还是被墙角挤着滑行，都不能把背露出来
+    e.faceX = p.x;
+    e.faceY = p.y;
     e.summonT -= dt;
     e.bossT -= dt;
 

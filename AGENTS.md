@@ -5,7 +5,7 @@
 
 ## 一句话定位
 
-纯静态网页小游戏合集：11 个独立游戏 + 1 个索引页 + 3 个全站共享模块（计时、限次、局间门禁）。
+纯静态网页小游戏合集：12 个独立游戏 + 1 个索引页 + 3 个全站共享模块（计时、限次、局间门禁）。
 无构建、无包管理、无框架，浏览器直接打开即可运行。
 
 ## 快速开始
@@ -23,12 +23,12 @@ python3 -m http.server 8123
 
 | 路径 | 作用 | 文档 |
 | --- | --- | --- |
-| `index.html` / `index.css` | 合集首页：每行两张卡片（封面在上、信息在下）+ 11 张游戏卡片 + 规则说明 | [doc/architecture.md](doc/architecture.md) |
-| `covers/` | 首页卡片封面图（11 张 jpg，900×675，按游戏 id 命名） | — |
+| `index.html` / `index.css` | 合集首页：每行两张卡片（封面在上、信息在下）+ 12 张游戏卡片 + 规则说明 | [doc/architecture.md](doc/architecture.md) |
+| `covers/` | 首页卡片封面图（12 张 jpg，900×675，按游戏 id 命名） | — |
 | `gate/` | 局间门禁引擎 + 4 种题型（24 点 / 唐诗 / 口算 / 英语） | [doc/shared-modules.md](doc/shared-modules.md) |
-| `limit/` | 单游戏「玩满 4 次锁 30 分钟」 | [doc/shared-modules.md](doc/shared-modules.md) |
+| `limit/` | 单游戏「玩满 5 次锁 15 分钟」 | [doc/shared-modules.md](doc/shared-modules.md) |
 | `playclock/` | 全站「玩 30 分钟歇 10 分钟」 | [doc/shared-modules.md](doc/shared-modules.md) |
-| `tetris/` `gun-game/` `typing-game/` `pvz/` `twenty-four/` `poem/` `plane/` `racing/` `zombie-defense/` `english/` `1024/` | 11 个独立游戏，各自页面 + 脚本 + 资源 | 见下表 |
+| `tetris/` `gun-game/` `typing-game/` `pvz/` `twenty-four/` `poem/` `plane/` `racing/` `zombie-defense/` `english/` `1024/` `sailing/` | 12 个独立游戏，各自页面 + 脚本 + 资源 | 见下表 |
 | `_build_zombie/` | 钢铁防线的生成工作区（`build.py` / 截图 / 校验脚本），**不是正式页面** | — |
 | `_seed.html` `_test-*.html` `shot_menu.png` | 开发期自检页与截图，`.gitignore` 已排除 `_*` | [doc/quality.md](doc/quality.md) |
 | `https:/` | 历史误创建的目录（URL 被当成路径），`https:/*` 已忽略，可直接删 | — |
@@ -45,9 +45,10 @@ python3 -m http.server 8123
 | 06 | 唐诗小状元 | `poem/poem.html` | 本身即题型来源 | [poem/README.md](poem/README.md) |
 | 07 | 穿云战机 | `plane/plane.html` | 24 点 / 唐诗 | — |
 | 08 | 霓虹狂飙 | `racing/racing.html` | 口算 / 唐诗 | [racing/README.md](racing/README.md) |
-| 09 | 钢铁防线 | `zombie-defense/士兵打僵尸.html` | 口算 / 唐诗 | — |
+| 09 | 钢铁防线 | `zombie-defense/zombie-defense.html` | 口算 / 唐诗 | — |
 | 10 | 英语小勇士 | `english/english.html` | 本身即题型来源 | — |
 | 11 | 1024 陶片牌局 | `1024/1024.html` | —（回合制，未接门禁） | — |
+| 12 | 碧海扬帆 | `sailing/sailing.html` | 口算 / 唐诗 | [sailing/README.md](sailing/README.md) |
 
 > 门禁引擎细节见 [gate/README.md](gate/README.md)；新增游戏后必须同步更新本表、`index.html` 卡片、`covers/` 封面、`limit/limit.js` 的 `GAMES`。
 
@@ -56,7 +57,7 @@ python3 -m http.server 8123
 | 规则 | 参数 | 实现 | 说明 |
 | --- | --- | --- | --- |
 | 强制休息 | 累计玩 **30 分钟** → 全站休息 **10 分钟** | `playclock/` | 全屏遮罩 + 拦截输入 + 派发 `playclock:breakstart/breakend` |
-| 单游戏限次 | 单游戏完整玩满 **4 次** → 锁 **30 分钟** | `limit/` | 失败 / 中途退出不计数；首页显示倒计时 |
+| 单游戏限次 | 单游戏完整玩满 **5 次** → 锁 **15 分钟** | `limit/` | 失败 / 中途退出不计数；首页显示倒计时 |
 | 局间门禁 | 累计玩 **5 分钟** → 全屏答题，答对才继续 | `gate/` | 按页分档存档，**刷新不能绕过**；未答对状态全站共享 |
 
 详细口径、边界条件与文案要求见 [doc/rules.md](doc/rules.md)。
@@ -80,8 +81,10 @@ python3 -m http.server 8123
 ```bash
 node --check racing/racing.js          # 单文件语法检查
 node gun-game/tools/validate-levels.js # 关卡连通性校验
+node gun-game/tools/test-ai.js         # 敌人 AI 回归测试（追击 / 绕墙 / 朝向）
 node twenty-four/tools/test-core.js    # 24 点引擎自检
 node typing-game/tools/validate-levels.js
+node sailing/tools/validate-levels.js   # 帆船八关自动航行 + 星级余量校验
 python3 -m http.server 8123            # 本地起服务
 ```
 
@@ -89,10 +92,11 @@ python3 -m http.server 8123            # 本地起服务
 
 1. **不引入构建链**：保持纯静态、无 npm、无打包器；新增游戏也必须双击可跑。
 2. **不绕过门禁 / 限次**：不以清 `localStorage`、改键名、跳过 `tick` 的方式「修好」计时问题。
-3. **共享模块只增不改语义**：`gate/` `limit/` `playclock/` 的默认参数和存档结构改动会影响全部 11 个游戏，改前先读各自 README。
+3. **共享模块只增不改语义**：`gate/` `limit/` `playclock/` 的默认参数和存档结构改动会影响全部 12 个游戏，改前先读各自 README。
 4. **首页是索引，不是游戏**：不在首页实现玩法，每张卡片一跳即走。
 5. **中文文案、中文注释**；面向小学生的游戏字号要大、操作要能触屏。
 6. **代码与文档同步改**：代码是唯一事实来源，文档随代码同一批次更新，不允许「先改代码，文档回头再说」。改动与文档的对应关系见下方「文档同步规则」。
+7. **文件名只用英文**：所有目录名、页面名、脚本名、图片名一律英文小写短横线（ASCII），禁止中文文件名、空格、大写；页面内文案与注释仍用中文。新增或重命名文件时，同批次改掉所有引用（首页 `href`、文档、构建脚本）。
 
 ## 文档索引
 
@@ -110,9 +114,10 @@ python3 -m http.server 8123            # 本地起服务
 
 | 改了什么 | 必须同步 |
 | --- | --- |
-| 计时 / 限次 / 门禁的参数（30/10、4 次/30 分钟、5 分钟） | `playclock.js` 或 `limit.js` 常量、各游戏 `createGate()`、`index.html` 页头文案、[doc/rules.md](doc/rules.md)、本文件「规则速查」、对应模块 README |
+| 计时 / 限次 / 门禁的参数（30/10、5 次/15 分钟、5 分钟） | `playclock.js` 或 `limit.js` 常量、各游戏 `createGate()`、`index.html` 页头文案、[doc/rules.md](doc/rules.md)、本文件「规则速查」、对应模块 README |
 | 共享模块的 API / 参数 / 事件 / 存档键 | [doc/shared-modules.md](doc/shared-modules.md)、`gate/README.md`、`playclock/README.md`、[doc/architecture.md](doc/architecture.md) 存档表 |
 | 新增或下线游戏 | 本文件游戏表与目录地图、`index.html` 卡片与页脚总数、`covers/`、`limit/limit.js` 的 `GAMES`、[doc/shared-modules.md](doc/shared-modules.md) 接入矩阵、[doc/quality.md](doc/quality.md) 缺口、该游戏 `README.md` |
+| 文件 / 目录改名 | 所有引用同步：`index.html` 的 `href` 与 `data-game`、`limit/limit.js` 的 `GAMES`、`covers/` 文件名、`doc/` 内的路径、`_build_*/` 构建脚本内的输出名 |
 | 目录结构 / 脚本加载顺序 / 依赖方向 | [doc/architecture.md](doc/architecture.md) |
 | 代码风格、配色、封面尺寸、断点、存档命名 | [doc/dev-conventions.md](doc/dev-conventions.md) |
 | 校验脚本 / 调试参数 / 验收步骤 | [doc/quality.md](doc/quality.md) |

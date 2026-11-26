@@ -601,7 +601,7 @@ body::after{
   let score = 0, best = Number(localStorage.getItem('t1024-best') || 0);
   let moves = 0, combo = 0, maxTile = 2;
   let over = false, won = false, keepGoing = false, locked = false, queued = null;
-  let broke = false, counted = false;   // 全站休息中 / 本局是否已记入「玩满 4 次」
+  let broke = false, counted = false;   // 全站休息中 / 本局是否已记入「玩满 5 次」
 
   // 全站强制休息：休息期间不接受任何操作
   document.addEventListener('playclock:breakstart', () => { broke = true; });

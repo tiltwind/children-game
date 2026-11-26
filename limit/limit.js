@@ -1,7 +1,7 @@
 /* ============================================================
  * limit.js —— 单游戏局数上限与冷却
  *
- * 规则：每个游戏累计完整玩满 4 次（4 关 / 4 局），该游戏锁定 30 分钟，
+ * 规则：每个游戏累计完整玩满 5 次（5 关 / 5 局），该游戏锁定 15 分钟，
  * 期间只能去玩别的游戏；回到首页可以看到倒计时。
  *
  * 状态存在 localStorage，所有页面共享。
@@ -18,8 +18,8 @@
 (function (global) {
     "use strict";
 
-    var LIMIT = 4;
-    var LOCK_MS = 30 * 60 * 1000;
+    var LIMIT = 5;
+    var LOCK_MS = 15 * 60 * 1000;
     var KEY = "shutu.limit.v1";
 
     var GAMES = {
@@ -33,7 +33,8 @@
         racing: { name: "霓虹狂飙" },
         "zombie-defense": { name: "钢铁防线" },
         english: { name: "英语小勇士" },
-        "1024": { name: "1024 陶片牌局" }
+        "1024": { name: "1024 陶片牌局" },
+        sailing: { name: "碧海扬帆" }
     };
 
     var script = document.currentScript;
@@ -80,7 +81,7 @@
 
     function readEntry(id) {
         var entry = normalize(readAll()[id] || { plays: 0, lockUntil: 0 });
-        /* 冷却结束：自动清零，重新计算 4 次 */
+        /* 冷却结束：自动清零，重新计算 5 次 */
         if (entry.lockUntil && entry.lockUntil <= now()) {
             entry.plays = 0;
             entry.lockUntil = 0;
@@ -248,7 +249,7 @@
             '  <div class="limit-icon" aria-hidden="true">🔒</div>' +
             '  <p class="limit-kicker">GAME REST · 游戏休息</p>' +
             '  <h2 class="limit-title">「' + st.name + "」先休息一下</h2>" +
-            '  <p class="limit-text">这个游戏已经完整玩了 4 次，要休息 30 分钟才能再玩。先去别的游戏玩一会儿，玩完回到首页再来。</p>' +
+            '  <p class="limit-text">这个游戏已经完整玩了 5 次，要休息 15 分钟才能再玩。先去别的游戏玩一会儿，玩完回到首页再来。</p>' +
             '  <div class="limit-count"></div>' +
             '  <p class="limit-tip">休息结束后，这里会自动恢复。</p>' +
             '  <div class="limit-actions">' +
@@ -271,7 +272,7 @@
         lockScreen.__count.textContent = fmtClock(st.remainMs);
     }
 
-    /* ---------------- 弹层：刚刚玩满 4 次 ---------------- */
+    /* ---------------- 弹层：刚刚玩满 5 次 ---------------- */
 
     function buildModal() {
         if (modal) return modal;
@@ -312,7 +313,7 @@
         if (stayBtn) stayBtn.hidden = canStay === false;
         m.__title.textContent = "「" + st.name + "」正在休息";
         m.__text.textContent =
-            "这个游戏已经完整玩了 4 次，要休息 30 分钟。趁这会儿去玩玩别的游戏，玩完回到首页，再来这里看倒计时。";
+            "这个游戏已经完整玩了 5 次，要休息 15 分钟。趁这会儿去玩玩别的游戏，玩完回到首页，再来这里看倒计时。";
         m.__count.textContent = fmtClock(st.remainMs);
         m.hidden = false;
     }
@@ -332,7 +333,7 @@
         modal.__count.textContent = fmtClock(st.remainMs);
     }
 
-    /* 玩满 4 次时，在游戏页提示换游戏 */
+    /* 玩满 5 次时，在游戏页提示换游戏 */
     function showSwitchPrompt(id) {
         if (isIndex) return;
         var st = status(id);

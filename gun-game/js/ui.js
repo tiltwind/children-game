@@ -26,6 +26,8 @@
       timer: document.getElementById('hudTimer'),
       objective: document.getElementById('hudObjective'),
       objBar: document.getElementById('objBar'),
+      objSub: document.getElementById('hudObjSub'),
+      callout: document.getElementById('hudCallout'),
       stealth: document.getElementById('hudStealth'),
       hpBar: document.getElementById('hpBar'),
       hpNum: document.getElementById('hpNum'),
@@ -99,6 +101,12 @@
     refs.bossBar.style.width = '100%';
     refs.toasts.innerHTML = '';
     refs.hint.textContent = '';
+    refs.objSub.textContent = '';
+    refs.callout.textContent = '';
+    refs.callout.className = 'hud-callout';
+    UI._guide = null;
+    UI._guideTone = null;
+    UI._hint = null;
     refs.weaponSlots.innerHTML = w.player.weapons.map(function (wp, i) {
       return '<span class="slot-chip" data-slot="' + i + '">' + (i + 1) + ' ' + wp.def.short + '</span>';
     }).join('');
@@ -162,7 +170,7 @@
       '      <div>' +
       '        <div class="screen-kicker">SHUTU TACTICAL / 8 OPERATIONS</div>' +
       '        <h1>铁幕街区</h1>' +
-      '        <p class="desc">俯视角战术射击。视野只有一盏灯的距离，枪声会把整层楼的人叫来。用掩体、消音枪、手雷和翻滚，把八个街区一寸一寸拿下来。</p>' +
+      '        <p class="desc">俯视角战术射击。敌人始终知道你在哪，会从四面八方主动压上。用掩体、手雷和翻滚，把八个街区一寸一寸拿下来。</p>' +
       '      </div>' +
       '      <div class="menu-meta">信用点 <b>' + profile.credits + '</b><br>已通关 <b>' + done + ' / 8</b><br>难度 <b>' + difficulty.name + '</b></div>' +
       '    </div>' +
@@ -174,7 +182,7 @@
       '      <span class="spacer"></span>' +
       '      <span class="controls-line" style="margin:0">WASD 移动 · 左键射击 · R 换弹 · E 接入 · F 处决</span>' +
       '    </div>' +
-      '    <div class="controls-line">每完成 1 关计 1 次游玩；4 次后按站内规则休息 30 分钟。每 5 分钟插入一道 24 点 / 古诗门禁。</div>' +
+      '    <div class="controls-line">每完成 1 关计 1 次游玩；5 次后按站内规则休息 15 分钟。每 5 分钟插入一道 24 点 / 古诗门禁。</div>' +
       '  </div>' +
       '</div>');
   };
@@ -317,7 +325,7 @@
         '          <button type="button" class="btn" data-act="shop">战前整备</button>' +
         '          <button type="button" class="btn btn-ghost" data-act="menu">返回战役地图</button>' +
         '        </div>' +
-        '        <p class="result-tip">提示：先清掉落单的敌人，尽量用消音手枪和处决打开缺口；被包围时用手雷和油桶破局。</p>' +
+        '        <p class="result-tip">提示：先打掉冲在最前面的，优先清指挥官和狙击手；被围住时用手雷和油桶打开缺口，别停在一个地方。</p>' +
         '      </div>' +
         '    </div>' +
         '  </div>' +
@@ -400,26 +408,38 @@
     var w = world, p = w.player, o = w.mission.objective, st = w.objective;
 
     refs.timer.textContent = U.fmt(w.elapsed);
-    var alive = 0;
-    for (var i = 0; i < w.enemies.length; i++) if (w.enemies[i].alive) alive++;
-    var progress = 0, text = '', bar = 0;
+    // 场上敌人：所有关卡都能看到，不再只有「清剿关」才显示
+    var alive = w.aliveCount ? w.aliveCount() : 0;
+    var wavesTotal = (w.mission.waves && w.mission.waves.length) || 0;
+    var wavesSpawned = Math.min(w.waveIndex, wavesTotal);
+    var progress = 0, text = '', bar = 0, sub = '';
+
     if (o.type === 'eliminate') {
       var total = Math.max(1, w.enemyTotal);
       progress = (total - alive) / total;
-      text = st.done ? '撤离点已开放，前往西南侧门' : '剩余敌人 ' + alive + ' / ' + total;
+      text = '场上敌人 ' + alive + ' / ' + total;
+      sub = '已清除 ' + (total - alive) + ' / ' + total;
       bar = progress;
     } else if (o.type === 'hack') {
       progress = st.hacked / st.required;
-      text = st.done ? '撤离点已开放，撤回一层大厅' : '数据节点 ' + st.hacked + ' / ' + st.required;
+      text = '数据节点 ' + st.hacked + ' / ' + st.required;
+      sub = '场上敌人 ' + alive + ' · 接线会触发敌方增援';
       bar = progress;
     } else if (o.type === 'defend') {
-      var inZone = w.map.zone && U.dist(p.x, p.y, w.map.zone.x, w.map.zone.y) <= w.map.zone.r;
+      var inZone = !!(w.map.zone && U.dist(p.x, p.y, w.map.zone.x, w.map.zone.y) <= w.map.zone.r);
       progress = st.holdT / o.seconds;
-      text = st.done ? '撤离点已开放，登机撤离' : (inZone ? '坚守 ' + U.fmt(st.remain) : '回到降落圈内才计时 · ' + U.fmt(st.remain));
+      // 主行只放「目标本身」的量化：圈内累计时间；圈外不涨这件事由 callout 明说
+      // 合并关（撤离点=降落圈）：守满后不用跑，圈内原地登机
+      text = st.done
+        ? '已守满 ' + U.fmt(o.seconds) + (w.mission.extractInZone ? ' · 原地登机' : ' · 撤离点已开放')
+        : (inZone ? '圈内累计 ' : '圈外不计时 · ') + U.fmt(Math.min(o.seconds, st.holdT)) + ' / ' + U.fmt(o.seconds);
+      sub = '增援 ' + wavesSpawned + '/' + wavesTotal + ' 波 · 场上敌人 ' + alive +
+        (w.accel ? ' · 清场加速 ×1.5' : '');
       bar = progress;
     } else if (o.type === 'survive') {
       progress = (o.seconds - st.remain) / o.seconds;
-      text = st.done ? '撤离点已开放，从东口登车' : '撑住 ' + U.fmt(st.remain);
+      text = '剩余 ' + U.fmt(st.remain);
+      sub = '增援 ' + wavesSpawned + '/' + wavesTotal + ' 波 · 场上敌人 ' + alive;
       bar = progress;
     } else if (o.type === 'boss') {
       var boss = null;
@@ -428,17 +448,38 @@
         progress = 1 - boss.hp / boss.maxHp;
         bar = progress;
         text = '击杀「铁颚」 · 血量 ' + Math.max(0, Math.round(boss.hp));
+        sub = '场上护卫 ' + alive;
         refs.bossHud.classList.remove('is-hidden');
         refs.bossBar.style.width = (100 - progress * 100) + '%';
       } else {
         progress = 1;
         bar = 1;
-        text = '撤离点已开放，从南侧升降台撤离';
+        text = '「铁颚」已击毙';
+        sub = '场上敌人 ' + alive;
         refs.bossHud.classList.add('is-hidden');
       }
     }
     refs.objective.textContent = text;
+    refs.objSub.textContent = sub;
     refs.objBar.style.width = Math.min(100, Math.max(0, bar * 100)) + '%';
+
+    // 行动提示：world.buildGuide() 出品，方向上统一换算成「八方向 + 米」
+    var g = w.guide;
+    var guideText = '';
+    if (g && g.text) {
+      guideText = g.text;
+      if (g.target) {
+        var gdx = g.target.x - p.x, gdy = g.target.y - p.y;
+        var gd = Math.hypot(gdx, gdy);
+        if (gd > C.TILE * 2) guideText += ' · ' + U.dir8(gdx, gdy) + ' ' + U.meters(gd) + ' 米';
+      }
+    }
+    if (guideText !== UI._guide || (g && g.tone) !== UI._guideTone) {
+      UI._guide = guideText;
+      UI._guideTone = g && g.tone;
+      refs.callout.textContent = guideText;
+      refs.callout.className = 'hud-callout' + (guideText ? ' is-show' : '') + (g && g.tone ? ' tone-' + g.tone : '');
+    }
 
     refs.hpBar.style.width = Math.max(0, p.hp / p.maxHp * 100) + '%';
     refs.hpNum.textContent = Math.max(0, Math.round(p.hp));
@@ -450,7 +491,7 @@
 
     var wp = p.weapon;
     if (wp) {
-      refs.weaponName.textContent = wp.def.name;
+      refs.weaponName.textContent = wp.def.name + (p.scoped ? ' · 开镜' : '');
       refs.magNum.textContent = wp.mag;
       refs.reserveNum.textContent = wp.reserve;
     }
@@ -460,19 +501,28 @@
       chips[c].className = 'slot-chip' + (c === p.cur ? ' is-active' : '') + (chipWp && chipWp.mag + chipWp.reserve === 0 ? ' is-empty' : '');
     }
 
-    if (w.stats.alerts > 0) {
-      refs.stealth.textContent = '交火 · 警报 ' + w.stats.alerts;
+    var anyAlerted = false;
+    for (var ax = 0; ax < w.enemies.length; ax++) {
+      if (w.enemies[ax].alive && w.enemies[ax].alerted) { anyAlerted = true; break; }
+    }
+    if (anyAlerted) {
+      refs.stealth.textContent = '交火 · 敌对单位已警觉';
       refs.stealth.classList.add('is-combat');
     } else if (w.elapsed > 2) {
-      refs.stealth.textContent = '未被发现';
+      refs.stealth.textContent = w.stats.alerts > 0 ? '脱离接触 · 敌人已冷静' : '未被发现';
       refs.stealth.classList.remove('is-combat');
     }
 
     // 提示
     var hint = '';
     if (w.elapsed < 4.5 && w.stats.shots === 0) hint = 'WASD 移动 · 左键射击 · F 处决 · G 手雷';
-    else if (w.interact) hint = '按住 E 接入节点';
-    else if (w.extractionOpen) hint = '前往撤离点撤离';
+    else if (w.interact) hint = '按住 E 接入节点 · ' + Math.round(w.interact.progress / 3 * 100) + '%';
+    else if (w.interactNear) hint = '按住 E 接入节点';
+    else if (w.extractionOpen) hint = w.mission.extractInZone ? '在圈内站定 0.5 秒完成登机' : '站进撤离区停留 0.5 秒完成撤离';
+    else if (!w.mission.extractInZone && w.map.extract && w.map.inExtract(p.x, p.y)) hint = '撤离点尚未开放 · 先完成作战目标';
+    else if (o.type === 'defend' && w.map.zone && U.dist(p.x, p.y, w.map.zone.x, w.map.zone.y) <= w.map.zone.r) hint = '圈内计时中 · 别站死，围着掩体转';
+    else if (wp && wp.def.scope && p.scoped) hint = '已开镜 · 射击散布归零';
+    else if (wp && wp.def.scope) hint = '按住右键开镜';
     else if (wp && wp.mag === 0 && wp.reserve > 0) hint = 'R 换弹';
     else {
       for (var e = 0; e < w.enemies.length; e++) {
@@ -504,5 +554,7 @@
   UI.reset = function () {
     world = null;
     UI._hint = null;
+    UI._guide = null;
+    UI._guideTone = null;
   };
 })(typeof window !== 'undefined' ? window : globalThis);

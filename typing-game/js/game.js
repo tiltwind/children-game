@@ -267,7 +267,7 @@ function updateGameHud(force) {
 function endGame(success) {
     if (!gm || !gm.active) return;
     gm.active = false;
-    /* 通过一关记一次完整游戏：玩满 4 关，本游戏休息 30 分钟 */
+    /* 通过一关记一次完整游戏：玩满 5 关，本游戏休息 15 分钟 */
     if (success && window.GameLimit) window.GameLimit.count('typing');
     els.fieldTip.hidden = true;
     els.field.classList.remove('is-warn');

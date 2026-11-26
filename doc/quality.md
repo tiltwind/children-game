@@ -26,6 +26,7 @@ node --check tetris/tetris-script.js
 | `node twenty-four/tools/test-core.js` | 24 点求解、判重、六模式出题约束、种子复现、算式校验、提示 |
 | `node typing-game/tools/validate-levels.js` | 键盘探险 10 章 50 关的关卡表合法性 |
 | `node _build_zombie/check.js` | 钢铁防线单文件构建产物的渲染 / 结构自检 |
+| `node sailing/tools/validate-levels.js` | 碧海扬帆八关：用与 `game.js` 同构的物理模型自动航行，校验可达性、0 撞礁与星级余量（改 `SAIL.TUNE` / `par` 后必跑） |
 
 浏览器自检页（直接打开）：
 
@@ -46,10 +47,12 @@ node --check tetris/tetris-script.js
 | `?warp=秒数` | racing | 跳过倒计时并快进赛道，用于验收结算 / 冠军页 |
 | `?god=1` | racing | 免伤，只用于验收流程 |
 | `?level=N` / `?practice=1` | english | 跳过锁进第 N 关 / 直接开一轮混合练习 |
+| `?level=N` / `?autostart=1` / `?debug=1` | sailing | 直接进第 N 关（1–8）/ 跳菜单开航 / 左下角打印航向、AWA、drive、eff、横倾等读数 |
 
 组合示例：`racing/racing.html?level=6&autostart=1&god=1&warp=130` 直接跑到冠军赛终点。
 
 控制台接口（gun-game）：`GG.Game.start(id)`、`GG.Game.world()`、`GG.Game.profile()`、`GG.Game.state()`、`GG.Game.debug()`。
+控制台接口（sailing）：`SAIL.checkLevels()` 返回关卡静态检查问题列表（起点压岛 / 目标压礁 / 星级时间非法）。
 
 ## 4. 验收清单
 
@@ -62,8 +65,19 @@ node --check tetris/tetris-script.js
 - [ ] 门禁打开时 `Esc` 无效
 - [ ] 计时跨关卡累计，菜单 / 暂停 / 结算不计时
 - [ ] 满 30 分钟 → 全站遮罩 10 分钟，输入全被拦截，结束后自动恢复
-- [ ] 单游戏满 4 次 → 该游戏锁 30 分钟，首页卡片显示倒计时
+- [ ] 单游戏满 5 次 → 该游戏锁 15 分钟，首页卡片显示倒计时
 - [ ] 隐私模式（禁用 localStorage）下不报错、可正常玩
+
+**关卡 / 目标引导（gun-game 这类有抽象目标的地图关）**
+
+- [ ] 目标本体在场景里有可视化：降落圈（虚线环 + 进度弧 + 圈内剩余秒数）、终端、撤离点
+- [ ] 撤离点未开放时是锁定态（锁图标 + 「未开放」），踩上去会有一句原因提示且不刷屏
+- [ ] 屏幕下方常驻「现在该做什么」，目标在画面外时屏幕边缘有箭头与米数
+- [ ] HUD 能直接看到场上敌人数与波次进度，不必靠猜
+- [ ] 防守关：圈外不累计、清空后回圈有加速；波次跟随圈内坚守时间而不是真实耗时
+- [ ] 无头验证：全程站圈 → 到点 `extractionOpen`；圈外拖延 → 不开放但提示「回圈」
+- [ ] 出口与目标区合并的关卡（OP.04 撤离点=降落圈）：守满后原地结算，圈心停机坪有锁定态与开放态，不再需要跑去第二个地点
+- [ ] 只剩最后一名敌人时：场上有标记环 + 「最后一个」，HUD 提示带方位与米数，且标记与边缘箭头不会叠在同一处
 
 **新游戏**
 
@@ -71,7 +85,7 @@ node --check tetris/tetris-script.js
 - [ ] 键盘可玩、触屏可玩；390px 宽度下布局不溢出
 - [ ] 背景标签不累计游玩时间；多标签同时开不出双倍计时
 - [ ] 封面在首页正确显示，编号与顺序正确，页脚总数正确
-- [ ] 满 4 次后回首页能看到锁定倒计时
+- [ ] 满 5 次后回首页能看到锁定倒计时
 - [ ] 静音开关生效且刷新后保留
 - [ ] 按 [../AGENTS.md](../AGENTS.md)「文档同步规则」核对：受影响的文档已同批更新，无过期参数 / 清单
 
@@ -92,8 +106,8 @@ node --check tetris/tetris-script.js
 
 | 位置 | 现状 | 建议 |
 | --- | --- | --- |
-| `zombie-defense/士兵打僵尸.html` | 已接 gate + limit，**未接 playclock** | 按 [shared-modules.md](shared-modules.md) 第 3 节补齐，并监听休息事件暂停 |
+| `zombie-defense/zombie-defense.html` | 已接 gate + limit，**未接 playclock** | 按 [shared-modules.md](shared-modules.md) 第 3 节补齐，并监听休息事件暂停 |
 | `tetris/README.md`、`limit/README.md` | 空文件 | 补玩法 / API 说明，或删除避免误导 |
 | `https:/github.com/...` | URL 被当路径误建的目录 | 确认无用后删除（`https:/*` 已被忽略） |
 | `_build_zombie/` | 生成工作区，含 700KB+ 截图 | 可整体移出仓库或保留但确认被忽略 |
-| 首页页脚 | 硬编码「共 11 个游戏」 | 新增游戏时手动改，或改为由卡片数量生成 |
+| 首页页脚 | 硬编码「共 12 个游戏」 | 新增游戏时手动改，或改为由卡片数量生成 |

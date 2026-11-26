@@ -348,6 +348,20 @@
       y >= this.extract.y && y <= this.extract.y + this.extract.h;
   };
 
+  // 是否站在降落圈内（防守关的目标区域）
+  Map.prototype.zoneContains = function (x, y) {
+    if (!this.zone) return false;
+    var dx = x - this.zone.x, dy = y - this.zone.y;
+    return dx * dx + dy * dy <= this.zone.r * this.zone.r;
+  };
+
+  // 撤离判定区域：OP.04 把撤离点和降落圈合并（extractInZone），整个圈就是登机区；
+  // 其它关卡仍用地图上的撤离方块。判定只走这一个入口，避免两套口径。
+  Map.prototype.inExtractArea = function (x, y) {
+    if (this.mission && this.mission.extractInZone && this.zone) return this.zoneContains(x, y);
+    return this.inExtract(x, y);
+  };
+
   GG.Map = {
     create: function (mission) {
       return new Map(mission.map.w, mission.map.h, mission);
